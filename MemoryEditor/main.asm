@@ -64,4 +64,4 @@ Quit:
     invoke      ExitProcess, 0
 main ENDP
 
-END main
+END

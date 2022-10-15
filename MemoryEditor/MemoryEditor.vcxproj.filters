@@ -27,6 +27,9 @@
     <MASM Include="process.asm">
       <Filter>源文件</Filter>
     </MASM>
+    <MASM Include="winmain.asm">
+      <Filter>源文件</Filter>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
     <None Include="memeditor.inc">

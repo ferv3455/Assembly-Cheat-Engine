@@ -91,7 +91,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\masm32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>D:\Irvine\Irvine32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -154,6 +154,7 @@
     <MASM Include="main.asm" />
     <MASM Include="memedit.asm" />
     <MASM Include="process.asm" />
+    <MASM Include="winmain.asm" />
   </ItemGroup>
   <ItemGroup>
     <None Include="memeditor.inc" />
