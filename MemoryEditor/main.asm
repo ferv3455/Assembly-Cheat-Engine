@@ -17,7 +17,7 @@ writeAddr       DWORD       ?
 writeData       DWORD       ?
 
 .code
-Main PROC
+main PROC
     ; List all processes (show all)
     invoke      EnumProc
 
@@ -50,12 +50,10 @@ Edit:
     ; Choose the address to modify
     invoke      printf, OFFSET addrPromptMsg
     invoke      scanf, OFFSET inputHexMsg, OFFSET writeAddr
-    ; mov         writeAddr, 00fbf740h
 
     ; Enter the new value
     invoke      printf, OFFSET valPromptMsg
     invoke      scanf, OFFSET inputNumMsg, OFFSET writeData
-    ; mov         writeData, 25
 
     ; Confirm
     invoke      Modify, pid, writeAddr, writeData
@@ -64,6 +62,6 @@ Edit:
 Quit:
     ; 0: Terminate
     invoke      ExitProcess, 0
-Main ENDP
+main ENDP
 
-END Main
+END main

@@ -9,15 +9,20 @@ modifyErrorMsg  BYTE        "Failed to open the process", 0ah, 0dh, 0
 
 .code
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
-
+Modify PROC,
+    pid:        DWORD,                 ; process PID
+    writeAddr:  DWORD,                 ; the address to modify
+    writeData:  DWORD                  ; new number
 ; Modify a value in the certain address.
-Modify PROC pid:DWORD, writeAddr:DWORD, writeData:DWORD
+; No return value.
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+
     invoke      OpenProcess, PROCESS_ALL_ACCESS, 0, pid                         ; open the process (according to pid)
     test        eax, eax                                                        ; check whether the process is successfully opened (use bitwise AND)
     jz          procOpenFailed                                                  ; if not successful, jump
     mov         ebx, eax                                                        ; save handle
-    invoke      ReadProcessMemory, ebx, writeAddr, ADDR recvData, 4, 0        ; save the original data
-    invoke      WriteProcessMemory, ebx, writeAddr, ADDR writeData, 4, 0      ; edit memory
+    invoke      ReadProcessMemory, ebx, writeAddr, ADDR recvData, 4, 0          ; save the original data
+    invoke      WriteProcessMemory, ebx, writeAddr, ADDR writeData, 4, 0        ; edit memory
     invoke      printf, OFFSET succMsg, recvData, writeData                     ; successful
     ret
 procOpenFailed:
@@ -25,5 +30,4 @@ procOpenFailed:
     ret
 Modify ENDP
 
-; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 END

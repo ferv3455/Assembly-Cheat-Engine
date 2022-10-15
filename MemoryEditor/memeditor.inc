@@ -1,7 +1,7 @@
 ; (memeditor.inc)
 .386
-.MODEL          flat, stdcall
-OPTION          casemap: none
+.model          flat, stdcall
+option          casemap: none
 
 INCLUDE         windows.inc
 INCLUDE         kernel32.inc 
@@ -14,6 +14,7 @@ INCLUDELIB      kernel32.lib
 INCLUDELIB      user32.lib 
 INCLUDELIB      psapi.lib
 
+; Irvine32.lib
 DumpRegs        PROTO
 ExitProcess     PROTO, dwExitCode:DWORD
 
