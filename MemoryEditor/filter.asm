@@ -3,7 +3,6 @@
 INCLUDE         memeditor.inc
 
 .data
-; <<<<<<<<<<<<<<<<<<<< PROC Filter >>>>>>>>>>>>>>>>>>>>>>>>>                      TO BE MODIFIED
 filterMsg       BYTE        "Use value %d to filter", 0ah, 0dh, 0
 
 .code

@@ -3,7 +3,6 @@
 INCLUDE         memeditor.inc
 
 .data
-; <<<<<<<<<<<<<<<<<<<< PROC Modify >>>>>>>>>>>>>>>>>>>>>>>>>                      TO BE MODIFIED
 recvData        SDWORD      ?
 succMsg         BYTE        "Successfully rewrite memory from %d to %d", 0ah, 0dh, 0
 modifyErrorMsg  BYTE        "Failed to open the process", 0ah, 0dh, 0
