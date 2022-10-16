@@ -7,6 +7,7 @@ inputNumMsg     BYTE        "%d", 0
 inputHexMsg     BYTE        "%x", 0
 pidPromptMsg    BYTE        "Enter the PID of the program: ", 0
 filterPromptMsg BYTE        "Enter the value: ", 0
+filterTwoMsg    BYTE        "Enter the value after changing:", 0
 addrPromptMsg   BYTE        "Enter the address to be edited: ", 0
 valPromptMsg    BYTE        "Enter the new value: ", 0
 command         DWORD       ?
@@ -33,20 +34,32 @@ MainLoop:
     jz          Quit
     cmp         eax, 1
     je          Filter
+    cmp         eax, 2
+    je          Filter2
     jmp         Edit
 
 Filter:
-    ; 1: Filter out the address
+    ; 1: Filter out the address (NEW)
     ; Input a value
     invoke      printf, OFFSET filterPromptMsg
     invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValue, filterVal
+    invoke      FilterValue, filterVal, pid
+    jmp         MainLoop
+
+Filter2:
+    ; 2: Filter out the address (NEXT)
+    ; Input a value
+    invoke      printf, OFFSET filterTwoMsg
+    invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
+
+    ; Filter, print out and save certain addresses
+    invoke      FilterValueTwo, filterVal, pid
     jmp         MainLoop
 
 Edit:
-    ; 2: Edit a given address
+    ; 3: Edit a given address
     ; Choose the address to modify
     invoke      printf, OFFSET addrPromptMsg
     invoke      scanf, OFFSET inputHexMsg, OFFSET writeAddr
@@ -64,4 +77,4 @@ Quit:
     invoke      ExitProcess, 0
 main ENDP
 
-END
+END             main

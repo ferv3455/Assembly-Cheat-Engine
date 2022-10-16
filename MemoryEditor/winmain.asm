@@ -186,4 +186,4 @@ WinProcExit:
 	ret
 WinProc ENDP
 
-END             WinMain
+END

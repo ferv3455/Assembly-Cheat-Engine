@@ -27,7 +27,8 @@ EnumProc        PROTO
 GetPidByTitle   PROTO, windowTitle:PTR BYTE, pid:PTR DWORD
 
 ; filter.asm
-FilterValue     PROTO, filterVal:DWORD
+FilterValue     PROTO, filterVal:DWORD, pid:DWORD
+FilterValueTwo  PROTO, filterVal:DWORD, pid:DWORD
 
 ; memedit.asm
 Modify          PROTO, pid:DWORD, writeAddr:DWORD, writeData:DWORD
