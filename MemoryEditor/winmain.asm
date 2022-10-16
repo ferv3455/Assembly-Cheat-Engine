@@ -29,10 +29,10 @@ MSGStruct ENDS
 ; <<<<<<<<<<<<<<<<<<<< Widget Styles >>>>>>>>>>>>>>>>>>>>>>>>>
 MAIN_WINDOW_STYLE = WS_VISIBLE+WS_CAPTION+WS_SYSMENU+WS_MINIMIZEBOX+WS_THICKFRAME
 BUTTON_STYLE = WS_CHILD+WS_VISIBLE+BS_PUSHBUTTON
-EDIT_STYLE = WS_CHILD+WS_VISIBLE+ES_NUMBER
+EDIT_STYLE = WS_CHILD+WS_VISIBLE+WS_BORDER+ES_NUMBER
 ADDR_STYLE = WS_CHILD+WS_VISIBLE
 TEXT_STYLE = WS_CHILD+WS_VISIBLE
-LISTBOX_STYLE = WS_CHILD+WS_VISIBLE+LBS_NOTIFY
+LISTBOX_STYLE = WS_CHILD+WS_VISIBLE+WS_VSCROLL+LBS_NOTIFY
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< Popup Messages >>>>>>>>>>>>>>>>>>>>>>>>>
@@ -62,11 +62,11 @@ editLabel       BYTE        "Edit Memory: ", 0
 addrLabel       BYTE        "Address: ", 0
 newValLabel     BYTE        "New Value: ", 0
 editBtn         BYTE        "Edit", 0
+loadingLabel    BYTE        "LOADING ...", 0
 
 ; <<<<<<<<<<<<<<<<<<<< Handles of Widgets >>>>>>>>>>>>>>>>>>>>>>>>>
 hMainWnd        DWORD       ?
 hListBox        DWORD       ?
-; hMainEdit       DWORD       ?
 hQuitBtn        DWORD       ?
 hSelectBtn      DWORD       ?
 hFiltLabel      DWORD       ?
@@ -80,6 +80,7 @@ hAddrEdit       DWORD       ?
 hNewValLabel    DWORD       ?
 hNewValEdit     DWORD       ?
 hEditBtn        DWORD       ?
+hLoadingLabel   DWORD       ?
 
 ; <<<<<<<<<<<<<<<<<<<< Main Logics >>>>>>>>>>>>>>>>>>>>>>>>>
 state           DWORD       0
@@ -197,7 +198,7 @@ WinMain PROC
 
     ; address edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
-                    BUTTON_STYLE, 380, 380, 180, 40,             
+                    EDIT_STYLE, 380, 380, 180, 40,             
                     hMainWnd, 11, hInstance, NULL
     mov         hAddrEdit, eax
     invoke      EnableWindow, hAddrEdit, 0
@@ -210,7 +211,7 @@ WinMain PROC
 
     ; new value edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
-                    BUTTON_STYLE, 380, 440, 180, 40,             
+                    EDIT_STYLE, 380, 440, 180, 40,             
                     hMainWnd, 13, hInstance, NULL
     mov         hNewValEdit, eax
     invoke      EnableWindow, hNewValEdit, 0
@@ -221,6 +222,13 @@ WinMain PROC
                     hMainWnd, 14, hInstance, NULL
     mov         hEditBtn, eax
     invoke      EnableWindow, hEditBtn, 0
+
+    ; loading label
+    invoke      CreateWindowEx, 0, ADDR textClass, ADDR loadingLabel,
+                    TEXT_STYLE, 300, 300, 120, 40,             
+                    hMainWnd, 15, hInstance, NULL
+    mov         hLoadingLabel, eax
+    invoke      ShowWindow, hLoadingLabel, SW_HIDE
 
     ; <<<<<<<<<<<<<<<<<<<< Displaying MainWindow >>>>>>>>>>>>>>>>>>>>>>>>>
     invoke      ShowWindow, hMainWnd, SW_SHOW
@@ -304,58 +312,32 @@ WinProc PROC,
         .ELSEIF     state == 1           ; before first
             .IF             bx == BN_CLICKED    ; button
                 .IF         ax == 5             ; new filtering
-                    invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
-                    invoke      GetDlgItemInt, hMainWnd, 8, NULL, 0
-                    mov         filterVal, eax
-                    invoke      FilterValue, filterVal, pid, hListBox
-                    invoke      EnableWindow, hNextBtn, 1
                     mov         state, 2
+                    jmp         NewScan
                 .ENDIF
             .ELSEIF         bx == LBN_SELCHANGE ; listbox
-                invoke          SendMessage, hListBox, LB_GETCURSEL, 0, 0
-                invoke          SendMessage, hListBox, LB_GETITEMDATA, eax, 0
-                invoke          FetchAddr, eax, ADDR writeAddr
-                invoke          sprintf, OFFSET buffer, OFFSET addrMsg, writeAddr
-                invoke          SetWindowText, hAddrEdit, OFFSET buffer
-                mov             state, 3
+                mov         state, 3
+                jmp         SelectAddr
             .ENDIF
         .ELSEIF     state == 2           ; after first
             .IF             bx == BN_CLICKED    ; button
                 .IF         ax == 5             ; new filtering
-                    invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
-                    invoke      GetDlgItemInt, hMainWnd, 8, NULL, 0
-                    mov         filterVal, eax
-                    invoke      FilterValue, filterVal, pid, hListBox
-                    invoke      EnableWindow, hNextBtn, 1
+                    jmp         NewScan
                 .ELSEIF     ax == 6             ; next filtering
-                    invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
-                    invoke      GetDlgItemInt, hMainWnd, 8, NULL, 0
-                    mov         filterVal, eax
-                    invoke      FilterValueTwo, filterVal, pid, hListBox
+                    jmp         NextScan
                 .ENDIF
             .ELSEIF         bx == LBN_SELCHANGE ; listbox
-                invoke          SendMessage, hListBox, LB_GETCURSEL, 0, 0
-                invoke          SendMessage, hListBox, LB_GETITEMDATA, eax, 0
-                invoke          FetchAddr, eax, ADDR writeAddr
-                invoke          sprintf, OFFSET buffer, OFFSET addrMsg, writeAddr
-                invoke          SetWindowText, hAddrEdit, OFFSET buffer
-                mov             state, 3
+                mov         state, 3
+                jmp         SelectAddr
             .ENDIF
         .ELSEIF     state == 3           ; address selected
             .IF             bx == BN_CLICKED    ; button
                 .IF         ax == 5             ; new filtering
-                    invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
-                    invoke      GetDlgItemInt, hMainWnd, 8, NULL, 0
-                    mov         filterVal, eax
-                    invoke      FilterValue, filterVal, pid, hListBox
-                    invoke      EnableWindow, hNextBtn, 1
                     mov         state, 2
+                    jmp         NewScan
                 .ELSEIF     ax == 6             ; next filtering
-                    invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
-                    invoke      GetDlgItemInt, hMainWnd, 8, NULL, 0
-                    mov         filterVal, eax
-                    invoke      FilterValueTwo, filterVal, pid, hListBox
                     mov         state, 2
+                    jmp         NextScan
                 .ELSEIF     ax == 14            ; edit
                     invoke      GetDlgItemInt, hMainWnd, 13, NULL, 0
                     mov         writeData, eax
@@ -363,11 +345,7 @@ WinProc PROC,
                     invoke      MessageBox, hMainWnd, ADDR successMsg, ADDR windowName, MB_OK
                 .ENDIF
             .ELSEIF         bx == LBN_SELCHANGE ; listbox
-                invoke          SendMessage, hListBox, LB_GETCURSEL, 0, 0
-                invoke          SendMessage, hListBox, LB_GETITEMDATA, eax, 0
-                invoke          FetchAddr, eax, ADDR writeAddr
-                invoke          sprintf, OFFSET buffer, OFFSET addrMsg, writeAddr
-                invoke          SetWindowText, hAddrEdit, OFFSET buffer
+                jmp         SelectAddr
             .ENDIF
         .ENDIF
         jmp         WinProcExit
@@ -376,9 +354,43 @@ WinProc PROC,
         invoke      DefWindowProc, hWnd, localMsg, wParam, lParam
         jmp         WinProcExit
     .ENDIF
+    jmp             WinProcExit
+
+NewScan:
+    invoke          ShowWindow, hLoadingLabel, SW_SHOW
+    invoke          UpdateWindow, hLoadingLabel
+    invoke          EnableWindow, hLoadingLabel, 1
+    invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
+    invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
+    mov             filterVal, eax
+    invoke          FilterValue, filterVal, pid, hListBox
+    invoke          EnableWindow, hNextBtn, 1
+    invoke          ShowWindow, hLoadingLabel, SW_HIDE
+    invoke          UpdateWindow, hLoadingLabel
+    jmp             WinProcExit
+
+NextScan:
+    invoke          ShowWindow, hLoadingLabel, SW_SHOW
+    invoke          UpdateWindow, hLoadingLabel
+    invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
+    invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
+    mov             filterVal, eax
+    invoke          FilterValueTwo, filterVal, pid, hListBox
+    invoke          ShowWindow, hLoadingLabel, SW_HIDE
+    invoke          UpdateWindow, hLoadingLabel
+    jmp             WinProcExit
+
+SelectAddr:
+    invoke          SendMessage, hListBox, LB_GETCURSEL, 0, 0   
+    invoke          SendMessage, hListBox, LB_GETITEMDATA, eax, 0
+    invoke          FetchAddr, eax, ADDR writeAddr
+    invoke          sprintf, OFFSET buffer, OFFSET addrMsg, writeAddr
+    invoke          SetWindowText, hAddrEdit, OFFSET buffer
+    jmp             WinProcExit
 
 WinProcExit:
     ret
 WinProc ENDP
 
+; END
 END                 WinMain

@@ -4,7 +4,7 @@ INCLUDE         memeditor.inc
 
 .data
 recvData        SDWORD      ?
-succMsg         BYTE        "Successfully rewrite memory from %d to %d", 0ah, 0dh, 0
+succMsg         BYTE        "Successfully rewrite memory from %u to %u", 0ah, 0dh, 0
 modifyErrorMsg  BYTE        "Failed to open the process", 0ah, 0dh, 0
 
 .code
@@ -23,7 +23,7 @@ Modify PROC,
     mov         ebx, eax                                                        ; save handle
     invoke      ReadProcessMemory, ebx, writeAddr, ADDR recvData, 4, 0          ; save the original data
     invoke      WriteProcessMemory, ebx, writeAddr, ADDR writeData, 4, 0        ; edit memory
-    ; invoke      printf, OFFSET succMsg, recvData, writeData                     ; successful
+    ; invoke      printf, OFFSET succMsg, recvData, writeData                   ; successful
     ret
 procOpenFailed:
     invoke      printf, OFFSET modifyErrorMsg

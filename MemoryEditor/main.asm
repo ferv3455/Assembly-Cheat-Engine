@@ -3,16 +3,18 @@
 INCLUDE         memeditor.inc
 
 .data
-inputNumMsg     BYTE        "%d", 0
+inputNumMsg     BYTE        "%u", 0
 inputHexMsg     BYTE        "%x", 0
 pidPromptMsg    BYTE        "Enter the PID of the program: ", 0
 filterPromptMsg BYTE        "Enter the value: ", 0
 filterTwoMsg    BYTE        "Enter the value after changing:", 0
 addrPromptMsg   BYTE        "Enter the address to be edited: ", 0
 valPromptMsg    BYTE        "Enter the new value: ", 0
-inputReminder   BYTE        "Enter the operation('1' for first filter, '2' for second filter, '3' for edit): ", 0
-command         DWORD       ?
+inputReminder   BYTE        "Enter the operation (1-new scan, 2-next scan, 3-edit, 0-quit): ", 0
+successMsg      BYTE        "Successfully rewrite memory.", 0ah, 0dh, 0
 
+.data?
+command         DWORD       ?
 pid             DWORD       ?
 filterVal       DWORD       ?
 writeAddr       DWORD       ?
@@ -72,6 +74,7 @@ Edit:
 
     ; Confirm
     invoke      Modify, pid, writeAddr, writeData
+    invoke      printf, OFFSET successMsg
     jmp         MainLoop
 
 Quit:
@@ -80,3 +83,4 @@ Quit:
 main ENDP
 
 END
+; END             main

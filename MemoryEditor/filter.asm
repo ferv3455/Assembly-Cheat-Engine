@@ -4,15 +4,15 @@ INCLUDE         memeditor.inc
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< PROC Filter >>>>>>>>>>>>>>>>>>>>>>>>>
-filterMsg       BYTE        "Use value %d to filter", 0ah, 0dh, 0
+filterMsg       BYTE        "Use value %u to filter", 0ah, 0dh, 0
 filterAnsMsg    BYTE        "Found address: %08X", 0ah, 0dh, 0
 testMsg         BYTE        "val is %08X", 0ah, 0dh, 0
-addrValMsg      BYTE        "%08X    %d", 0
+addrValMsg      BYTE        "%08X    %u", 0
 msgBuffer       BYTE        24 DUP(0)
 buf             DWORD       ?
 memMAX          DWORD       7FFFFFFFH
 memMIN          DWORD       0H
-lastsearch      DWORD       10240 DUP(?)
+lastsearch      DWORD       65536 DUP(?)
 totaladdr       DWORD       0
 errorFilterMsg  BYTE        "Failed to filter", 0ah, 0dh, 0
 
@@ -115,9 +115,13 @@ SUCCESS_find:
     invoke      printf, OFFSET filterAnsMsg, ansAddr
     jmp         SUCCESS_end
 updateListBox:
+    mov         eax, totaladdr
+    cmp         eax, 256
+    ja          SUCCESS_end
     invoke      sprintf, OFFSET msgBuffer, OFFSET addrValMsg, ansAddr, filterVal
     invoke      SendMessage, hListBox, LB_ADDSTRING, 0, ADDR msgBuffer
     invoke      SendMessage, hListBox, LB_SETITEMDATA, eax, totaladdr
+    invoke      UpdateWindow, hListBox
 SUCCESS_end:
     jmp         PIECE
     ret
@@ -186,9 +190,13 @@ findSuccess:
     invoke      printf, OFFSET filterTwoAnsMsg, ebx
     jmp         SUCCESS_end
 updateListBox:
+    mov         eax, newCount
+    cmp         eax, 256
+    ja          SUCCESS_end
     invoke      sprintf, OFFSET msgBuffer, OFFSET addrValMsg, ebx, filterVal
     invoke      SendMessage, hListBox, LB_ADDSTRING, 0, ADDR msgBuffer
     invoke      SendMessage, hListBox, LB_SETITEMDATA, eax, newCount
+    invoke      UpdateWindow, hListBox
 SUCCESS_end:
     jmp         findLoop
     ret

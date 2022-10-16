@@ -10,10 +10,10 @@ validPids       DWORD       2048 DUP(?)
 validCount      DWORD       ?
 enumMsg         BYTE        "%d processes found. Here are the ones that can be modified (only 32-bit user-level programs are supported):", 0ah, 0dh, 0
 errorEnumMsg    BYTE        "Failed to enumerate", 0ah, 0dh, 0
-procNameMsg     BYTE        "%d - %s", 0ah, 0dh, 0
+procNameMsg     BYTE        "%u - %s", 0ah, 0dh, 0
 
 ; <<<<<<<<<<<<<<<<<<<< PROC GetPidByTitle >>>>>>>>>>>>>>>>>>>>>>>>>
-pidMsg          BYTE        "Process PID: %d", 0ah, 0dh, 0
+pidMsg          BYTE        "Process PID: %u", 0ah, 0dh, 0
 errorMsg        BYTE        "Window not found", 0ah, 0dh, 0
 
 .code
