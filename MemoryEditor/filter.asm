@@ -12,7 +12,7 @@ msgBuffer       BYTE        24 DUP(0)
 buf             DWORD       ?
 memMAX          DWORD       7FFFFFFFH
 memMIN          DWORD       0H
-lastsearch      DWORD       65536 DUP(?)
+lastsearch      DWORD       10240 DUP(?)
 totaladdr       DWORD       0
 errorFilterMsg  BYTE        "Failed to filter", 0ah, 0dh, 0
 
@@ -103,6 +103,9 @@ PIECE:
     jmp         PIECE
     ret
 SUCCESS_find:
+    mov         eax, totaladdr
+    cmp         eax, LENGTH lastsearch
+    jae         fail_RET
     mov         ansAddr, edi
     add         edi, 4
     mov         eax, ansAddr
