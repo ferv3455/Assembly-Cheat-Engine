@@ -10,6 +10,7 @@ filterPromptMsg BYTE        "Enter the value: ", 0
 filterTwoMsg    BYTE        "Enter the value after changing:", 0
 addrPromptMsg   BYTE        "Enter the address to be edited: ", 0
 valPromptMsg    BYTE        "Enter the new value: ", 0
+inputReminder   BYTE        "Enter the operation('1' for first filter, '2' for second filter, '3' for edit): ", 0
 command         DWORD       ?
 
 pid             DWORD       ?
@@ -20,7 +21,7 @@ writeData       DWORD       ?
 .code
 main PROC
     ; List all processes (show all)
-    invoke      EnumProc
+    invoke      EnumProc, 0
 
     ; Enter the process id (select a window)
     invoke      printf, OFFSET pidPromptMsg
@@ -28,6 +29,7 @@ main PROC
 
 MainLoop:
     ; Main loop
+    invoke      printf, OFFSET inputReminder
     invoke      scanf, OFFSET inputNumMsg, OFFSET command
     mov         eax, command
     test        eax, eax
@@ -45,7 +47,7 @@ Filter:
     invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValue, filterVal, pid
+    invoke      FilterValue, filterVal, pid, 0
     jmp         MainLoop
 
 Filter2:
@@ -55,7 +57,7 @@ Filter2:
     invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValueTwo, filterVal, pid
+    invoke      FilterValueTwo, filterVal, pid, 0
     jmp         MainLoop
 
 Edit:
@@ -77,4 +79,4 @@ Quit:
     invoke      ExitProcess, 0
 main ENDP
 
-END             main
+END

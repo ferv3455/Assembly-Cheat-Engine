@@ -4,8 +4,10 @@ INCLUDE         memeditor.inc
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< PROC EnumProc >>>>>>>>>>>>>>>>>>>>>>>>>
-procPids        DWORD       1024 DUP(?)
+procPids        DWORD       2048 DUP(?)
 procCount       DWORD       ?
+validPids       DWORD       2048 DUP(?)
+validCount      DWORD       ?
 enumMsg         BYTE        "%d processes found. Here are the ones that can be modified (only 32-bit user-level programs are supported):", 0ah, 0dh, 0
 errorEnumMsg    BYTE        "Failed to enumerate", 0ah, 0dh, 0
 procNameMsg     BYTE        "%d - %s", 0ah, 0dh, 0
@@ -16,7 +18,8 @@ errorMsg        BYTE        "Window not found", 0ah, 0dh, 0
 
 .code
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
-EnumProc PROC
+EnumProc PROC,
+    hListBox:   DWORD                   ; the handle of Listbox if GUI is used
 ; Enumerate all processes.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
@@ -24,8 +27,17 @@ EnumProc PROC
     local       procName[260]:  BYTE
     local       hMod:           DWORD
     local       cbNeeded:       DWORD
+    local       gui:            DWORD
+
+    ; check whether GUI is used
+    mov         gui, 0
+    mov         eax, hListBox
+    test        eax, eax
+    jz          findPID
+    mov         gui, 1
 
     ; find all pids
+findPID:
     invoke      EnumProcesses, OFFSET procPids, SIZEOF procPids, OFFSET procCount
     test        eax, eax                                                        ; check whether enumerating is successful
     jz          enumerateFailed                                                 ; if not successful, jump
@@ -35,32 +47,71 @@ EnumProc PROC
     mov         ebx, TYPE procPids
     div         ebx
     mov         procCount, eax
+
+    mov         eax, gui
+    test        eax, eax
+    jnz         enumerateProc
     invoke      printf, OFFSET enumMsg, procCount                               ; show the number of processes
 
-    ; print all processes
+    ; save all processes
+enumerateProc:
+    mov         esi, OFFSET validPids
+    mov         validCount, 0
     mov         ecx, procCount
     mov         edi, OFFSET procPids
 L1:
     push        ecx
     invoke      OpenProcess, PROCESS_ALL_ACCESS, 0, [edi]                       ; open the process (according to pid)
     test        eax, eax                                                        ; check whether the process is successfully opened (use bitwise AND)
-    jz          procReadFailed                                                  ; if not successful, jump
+    jz          procReadOver                                                    ; if not successful, jump
     mov         ebx, eax
     invoke      EnumProcessModules, ebx, ADDR hMod, SIZEOF hMod, ADDR cbNeeded
     test        eax, eax
-    jz          procReadFailed
+    jz          procReadOver
     invoke      GetModuleBaseName, ebx, hMod, ADDR procName, LENGTHOF procName
-    invoke      printf, ADDR procNameMsg, DWORD PTR [edi], ADDR procName
-procReadFailed:
+
+    mov         ebx, [edi]
+    mov         [esi], ebx
+    inc         validCount
+    add         esi, TYPE validPids
+
+    mov         eax, gui
+    test        eax, eax
+    jnz         updateListBox
+    invoke      printf, ADDR procNameMsg, ebx, ADDR procName
+    jmp         procReadOver
+updateListBox:
+    invoke      SendMessage, hListBox, LB_ADDSTRING, 0, ADDR procName
+    invoke      SendMessage, hListBox, LB_SETITEMDATA, eax, validCount
+procReadOver:
     add         edi, TYPE procPids
     pop         ecx
-    loop        L1
+    dec         ecx
+    jnz         L1
     ret
 
 enumerateFailed:
     invoke      printf, OFFSET errorEnumMsg
     ret
 EnumProc ENDP
+
+
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+FetchProc PROC, 
+    index:      DWORD,                ; index in procPids
+    pid:        PTR DWORD             ; the address of PID to be saved
+; Get process ID according to the index.
+; No return value.
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+    mov         edi, pid
+    mov         eax, index
+    dec         eax
+    mov         ecx, TYPE validPids
+    mul         ecx
+    mov         ebx, validPids[eax]
+    mov         [edi], ebx
+    ret
+FetchProc ENDP
 
 
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««

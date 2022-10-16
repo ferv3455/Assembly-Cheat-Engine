@@ -23,7 +23,7 @@ Modify PROC,
     mov         ebx, eax                                                        ; save handle
     invoke      ReadProcessMemory, ebx, writeAddr, ADDR recvData, 4, 0          ; save the original data
     invoke      WriteProcessMemory, ebx, writeAddr, ADDR writeData, 4, 0        ; edit memory
-    invoke      printf, OFFSET succMsg, recvData, writeData                     ; successful
+    ; invoke      printf, OFFSET succMsg, recvData, writeData                     ; successful
     ret
 procOpenFailed:
     invoke      printf, OFFSET modifyErrorMsg
