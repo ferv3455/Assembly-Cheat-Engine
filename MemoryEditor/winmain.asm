@@ -1,6 +1,6 @@
 ; Windowed app with buttons
 
-INCLUDE	            memeditor.inc
+INCLUDE                memeditor.inc
 
 ; <<<<<<<<<<<<<<<<<<<< Window class >>>>>>>>>>>>>>>>>>>>>>>>>
 WNDCLASS STRUC
@@ -62,42 +62,42 @@ hText           DWORD       ?
 ; TODO
 
 ; <<<<<<<<<<<<<<<<<<<< Other data format >>>>>>>>>>>>>>>>>>>>>>>>>
-msg	            MSGStruct   <>
+msg             MSGStruct   <>
 winRect         RECT        <>
 hInstance       DWORD       ?
 
 MainWin         WNDCLASS    <NULL, WinProc, NULL, NULL, NULL, NULL, NULL,  \
-	                        COLOR_WINDOW, NULL, windowClass>
+                            COLOR_WINDOW, NULL, windowClass>
 
 .code
 WinMain PROC
     ; <<<<<<<<<<<<<<<<<<<< Creating Main Window >>>>>>>>>>>>>>>>>>>>>>>>>
     ; Get a handle to the current process.
-	invoke      GetModuleHandle, NULL
-	mov         hInstance, eax
-	mov         MainWin.hInstance, eax
+    invoke      GetModuleHandle, NULL
+    mov         hInstance, eax
+    mov         MainWin.hInstance, eax
 
     ; Load the program's icon and cursor.
-	invoke      LoadCursor, NULL, IDC_ARROW
-	mov         MainWin.hCursor, eax
+    invoke      LoadCursor, NULL, IDC_ARROW
+    mov         MainWin.hCursor, eax
 
     ; Register the window class.
-	invoke      RegisterClass, ADDR MainWin
-	.IF eax == 0
-	    jmp     Exit_Program
-	.ENDIF
+    invoke      RegisterClass, ADDR MainWin
+    .IF eax == 0
+        jmp     Exit_Program
+    .ENDIF
 
     ; Create the application's main window.
     ; Returns a handle to the main window in EAX.
-	invoke      CreateWindowEx, 0, ADDR windowClass, ADDR windowName, 
+    invoke      CreateWindowEx, 0, ADDR windowClass, ADDR windowName, 
                     MAIN_WINDOW_STYLE, CW_USEDEFAULT, CW_USEDEFAULT, 
                     600, 600, NULL, NULL, hInstance, NULL   ; Main Window WIDTH, HEIGHT
-	mov         hMainWnd, eax
+    mov         hMainWnd, eax
 
     ; If CreateWindowEx failed, display a message & exit.
-	.IF eax == 0
-	    jmp     Exit_Program
-	.ENDIF
+    .IF eax == 0
+        jmp     Exit_Program
+    .ENDIF
 
     ; <<<<<<<<<<<<<<<<<<<< Creating widgets >>>>>>>>>>>>>>>>>>>>>>>>>
     ; Create a button
@@ -121,36 +121,36 @@ WinMain PROC
     ; TODO
 
     ; <<<<<<<<<<<<<<<<<<<< Displaying all widgets >>>>>>>>>>>>>>>>>>>>>>>>>
-	invoke      ShowWindow, hMainWnd, SW_SHOW
-	invoke      UpdateWindow, hMainWnd
+    invoke      ShowWindow, hMainWnd, SW_SHOW
+    invoke      UpdateWindow, hMainWnd
     invoke      ShowWindow, hButton, SW_SHOW
-	invoke      UpdateWindow, hButton
+    invoke      UpdateWindow, hButton
     invoke      ShowWindow, hEdit, SW_SHOW
-	invoke      UpdateWindow, hEdit
+    invoke      UpdateWindow, hEdit
     ; TODO
 
     ; <<<<<<<<<<<<<<<<<<<< Message-handling loop >>>>>>>>>>>>>>>>>>>>>>>>>
 Message_Loop:
-	; Get next message from the queue.
-	invoke      GetMessage, ADDR msg, NULL,NULL,NULL
+    ; Get next message from the queue.
+    invoke      GetMessage, ADDR msg, NULL,NULL,NULL
 
-	; Quit if no more messages.
-	.IF eax == 0
-	    jmp     Exit_Program
-	.ENDIF
+    ; Quit if no more messages.
+    .IF eax == 0
+        jmp     Exit_Program
+    .ENDIF
 
-	; Relay the message to the program's WinProc.
+    ; Relay the message to the program's WinProc.
     invoke      TranslateMessage, ADDR msg
-	invoke      DispatchMessage, ADDR msg
+    invoke      DispatchMessage, ADDR msg
     jmp         Message_Loop
 
 Exit_Program:
-	invoke      ExitProcess, 0
+    invoke      ExitProcess, 0
 WinMain ENDP
 
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 WinProc PROC,
-	hWnd:       DWORD,              ; handler
+    hWnd:       DWORD,              ; handler
     localMsg:   DWORD,              ; message
     wParam:     DWORD,              ; wParam
     lParam:     DWORD               ; lParam
@@ -159,10 +159,10 @@ WinProc PROC,
 ; are forwarded to the default Windows message
 ; handler.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
-	mov             eax, localMsg
-    .IF eax == WM_CLOSE		    ; close window
-	    invoke      PostQuitMessage, 0
-	    jmp         WinProcExit
+    mov             eax, localMsg
+    .IF eax == WM_CLOSE            ; close window
+        invoke      PostQuitMessage, 0
+        jmp         WinProcExit
 
     .ELSEIF eax == WM_COMMAND   ; commands (including click, edit)
         mov         ebx, wParam
@@ -175,15 +175,15 @@ WinProc PROC,
         ; .ELSEIF     bx == EN_CHANGE     ; edit control changed
         ;     invoke  MessageBox, hWnd, ADDR editText, ADDR popupTitle, MB_OK
         ; .ENDIF
-	    jmp         WinProcExit
+        jmp         WinProcExit
 
-	.ELSE		                ; other message
-	    invoke      DefWindowProc, hWnd, localMsg, wParam, lParam
-	    jmp         WinProcExit
-	.ENDIF
+    .ELSE                        ; other message
+        invoke      DefWindowProc, hWnd, localMsg, wParam, lParam
+        jmp         WinProcExit
+    .ENDIF
 
 WinProcExit:
-	ret
+    ret
 WinProc ENDP
 
 END
