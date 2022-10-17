@@ -359,7 +359,6 @@ WinProc PROC,
 NewScan:
     invoke          ShowWindow, hLoadingLabel, SW_SHOW
     invoke          UpdateWindow, hLoadingLabel
-    invoke          EnableWindow, hLoadingLabel, 1
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
     mov             filterVal, eax
