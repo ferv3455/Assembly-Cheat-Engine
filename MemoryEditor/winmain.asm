@@ -285,7 +285,7 @@ WinProc PROC,
                 invoke      EnableWindow, hNewBtn, 0
                 invoke      EnableWindow, hNextBtn, 0
                 invoke      EnableWindow, hValEdit, 0
-                invoke      EnableWindow, hAddrEdit, 0
+                ; invoke      EnableWindow, hAddrEdit, 0
                 invoke      EnableWindow, hNewValEdit, 0
                 invoke      EnableWindow, hEditBtn, 0
             .ENDIF
@@ -304,7 +304,7 @@ WinProc PROC,
                     invoke      EnableWindow, hSelectBtn, 0
                     invoke      EnableWindow, hNewBtn, 1
                     invoke      EnableWindow, hValEdit, 1
-                    invoke      EnableWindow, hAddrEdit, 1
+                    ; invoke      EnableWindow, hAddrEdit, 1
                     invoke      EnableWindow, hNewValEdit, 1
                     invoke      EnableWindow, hEditBtn, 1
                 .ENDIF
@@ -334,9 +334,11 @@ WinProc PROC,
             .IF             bx == BN_CLICKED    ; button
                 .IF         ax == 5             ; new filtering
                     mov         state, 2
+                    invoke      SetWindowText, hAddrEdit, NULL
                     jmp         NewScan
                 .ELSEIF     ax == 6             ; next filtering
                     mov         state, 2
+                    invoke      SetWindowText, hAddrEdit, NULL
                     jmp         NextScan
                 .ELSEIF     ax == 14            ; edit
                     invoke      GetDlgItemInt, hMainWnd, 13, NULL, 0
