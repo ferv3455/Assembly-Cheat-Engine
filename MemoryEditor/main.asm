@@ -49,7 +49,7 @@ Filter:
     invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValue, filterVal, pid, 0
+    invoke      FilterValue, filterVal, pid, 0, 4
     jmp         MainLoop
 
 Filter2:
@@ -59,7 +59,7 @@ Filter2:
     invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValueTwo, filterVal, pid, 0
+    invoke      FilterValueTwo, filterVal, pid, 0, 4
     jmp         MainLoop
 
 Edit:

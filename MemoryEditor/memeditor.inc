@@ -29,8 +29,8 @@ FetchProc       PROTO, index:DWORD, pid:PTR DWORD
 GetPidByTitle   PROTO, windowTitle:PTR BYTE, pid:PTR DWORD
 
 ; filter.asm
-FilterValue     PROTO, filterVal:DWORD, pid:DWORD, hListBox:DWORD
-FilterValueTwo  PROTO, filterVal:DWORD, pid:DWORD, hListBox:DWORD
+FilterValue     PROTO, filterVal:DWORD, pid:DWORD, hListBox:DWORD, typeOfData: DWORD
+FilterValueTwo  PROTO, filterVal:DWORD, pid:DWORD, hListBox:DWORD, typeOfData: DWORD
 FetchAddr       PROTO, index:DWORD, address:PTR DWORD
 
 ; memedit.asm

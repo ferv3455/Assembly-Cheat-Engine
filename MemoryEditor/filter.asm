@@ -4,13 +4,20 @@ INCLUDE         memeditor.inc
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< PROC Filter >>>>>>>>>>>>>>>>>>>>>>>>>
+TYPE_QWORD      EQU         <8>
+TYPE_DWORD      EQU         <4>
+TYPE_WORD       EQU         <2>
+TYPE_BYTE       EQU         <1>
+bufDWORD        DWORD       ?
+bufWORD         WORD        ?
+bufBYTE         BYTE        ?
+
 filterMsg       BYTE        "Use value %u to filter", 0ah, 0dh, 0
 filterAnsMsg    BYTE        "Found address: %08X", 0ah, 0dh, 0
 testMsg         BYTE        "val is %08X", 0ah, 0dh, 0
 addrValMsg      BYTE        "%08X    %u", 0
 msgBuffer       BYTE        24 DUP(0)
-buf             DWORD       ?
-memMAX          DWORD       7FFFFFFFH
+memMAX          DWORD       0BFFFFFFFH
 memMIN          DWORD       0H
 lastsearch      DWORD       10240 DUP(?)
 totaladdr       DWORD       0
@@ -25,7 +32,8 @@ findDoneMsg     BYTE        "Find Done!", 0ah, 0dh, 0
 FilterValue PROC,
     filterVal:  DWORD,                 ; use this value to select addresses
     pid:        DWORD,                 ; which process
-    hListBox:   DWORD                  ; the handle of Listbox if GUI is used
+    hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
+    typeOfData: DWORD                  ; the type of the value to find
 ; Filter out addresses according to the value.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
@@ -55,7 +63,7 @@ Begin:
     mov         ebx, eax
     mov         ebxStore, ebx
     invoke      EnumProcessModules, ebx, ADDR hMod, SIZEOF hMod, ADDR cbNeeded
-    ; invoke      printf, OFFSET testMsg, DWORD PTR hMod[0]
+
     test        eax, eax
     jz          filterProcReadFailed
     ; invoke      ReadProcessMemory, ebx, DWORD PTR hMod[0], OFFSET buf, SIZEOF buf, ADDR numOfBytesRead
@@ -81,7 +89,7 @@ BLOCK:
     mov         edx, maxAddr
     add         edx, mbi[12]
     mov         maxAddr, edx
-    ; invoke      printf, offset testMsg, maxAddr
+
     mov         eax, mbi[16]
     cmp         eax, MEM_COMMIT
     je          PIECE
@@ -92,22 +100,50 @@ BLOCK:
 PIECE:
     cmp         edi, maxAddr
     je          BLOCK
-    ; invoke      printf, OFFSET testMsg, DWORD PTR edi
-    invoke      ReadProcessMemory, ebx, edi, OFFSET buf, SIZEOF buf, 0
+
+    .IF          (typeOfData == TYPE_DWORD)
+    invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, SIZEOF bufDWORD, 0
     test        eax, eax
     jz          accessFailed
     mov         eax, filterVal
-    cmp         eax, buf
+    cmp         eax, bufDWORD
     je          SUCCESS_find
     add         edi, 4
     jmp         PIECE
+    ret
+    .ENDIF
+
+    .IF          (typeOfData == TYPE_WORD)
+    invoke      ReadProcessMemory, ebx, edi, OFFSET bufWORD, SIZEOF bufWORD, 0
+    test        eax, eax
+    jz          accessFailed
+    mov         ax, WORD PTR filterVal
+    cmp         ax, bufWORD
+    je          SUCCESS_find
+    add         edi, 2
+    jmp         PIECE
+    ret
+    .ENDIF
+
+    .IF          (typeOfData == TYPE_BYTE)
+    invoke      ReadProcessMemory, ebx, edi, OFFSET bufBYTE, SIZEOF bufBYTE, 0
+    test        eax, eax
+    jz          accessFailed
+    mov         al, BYTE PTR filterVal
+    cmp         al, bufBYTE
+    je          SUCCESS_find
+    add         edi, 1
+    jmp         PIECE
+    ret
+    .ENDIF
+
     ret
 SUCCESS_find:
     mov         eax, totaladdr
     cmp         eax, LENGTH lastsearch
     jae         fail_RET
     mov         ansAddr, edi
-    add         edi, 4
+    add         edi, typeOfData
     mov         eax, ansAddr
     mov         [esi], eax
     inc         totaladdr
@@ -131,7 +167,7 @@ SUCCESS_end:
 fail_RET:
     ret
 accessFailed:
-    add         edi, 4
+    add         edi, typeOfData
     jmp         PIECE
     ret
 filterProcReadFailed:
@@ -144,11 +180,14 @@ FilterValue ENDP
 FilterValueTwo PROC,
     filterVal:  DWORD,                 ; use this value to select addresses
     pid:        DWORD,                 ; which process
-    hListBox:   DWORD                  ; the handle of Listbox if GUI is used
+    hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
+    typeOfData: DWORD                  ; the type of the value to find
 ; Select addresses according to the value from a given set.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
-    LOCAL       tmpVal:         DWORD
+    LOCAL       tmpValDWORD:    DWORD
+    LOCAL       tmpValWORD:     WORD
+    LOCAL       tmpValBYTE:     BYTE
     LOCAL       handle:         DWORD
     LOCAL       count:          DWORD
     LOCAL       newCount:       DWORD
@@ -177,11 +216,31 @@ findLoop:
     jae         findDone
     inc         count
     mov         ebx, [edi]
-    invoke      ReadProcessMemory, handle, ebx, ADDR tmpVal, 4, 0
+    
+    .IF          (typeOfData == TYPE_DWORD)
+    invoke      ReadProcessMemory, handle, ebx, ADDR tmpValDWORD, TYPE_DWORD, 0
     add         edi, TYPE lastsearch
-    mov         eax, tmpVal
+    mov         eax, tmpValDWORD
     cmp         eax, filterVal
     je          findSuccess
+    .ENDIF
+
+    .IF          (typeOfData == TYPE_WORD)
+    invoke      ReadProcessMemory, handle, ebx, ADDR tmpValWORD, TYPE_WORD, 0
+    add         edi, TYPE lastsearch
+    mov         ax, tmpValWORD
+    cmp         ax, WORD PTR filterVal
+    je          findSuccess
+    .ENDIF
+
+    .IF          (typeOfData == TYPE_BYTE)
+    invoke      ReadProcessMemory, handle, ebx, ADDR tmpValBYTE, TYPE_BYTE, 0
+    add         edi, TYPE lastsearch
+    mov         al, tmpValBYTE
+    cmp         al, BYTE PTR filterVal
+    je          findSuccess
+    .ENDIF
+
     jmp         findLoop
     ret
 findSuccess:
@@ -217,7 +276,7 @@ FilterValueTwo ENDP
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 FetchAddr PROC, 
     index:      DWORD,                ; index in addresses
-    address:    PTR DWORD             ; the address of Address to be saved
+    address:    PTR DWORD,            ; the address of Address to be saved
 ; Get address according to the index.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««

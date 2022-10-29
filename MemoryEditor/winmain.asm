@@ -364,7 +364,7 @@ NewScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
     mov             filterVal, eax
-    invoke          FilterValue, filterVal, pid, hListBox
+    invoke          FilterValue, filterVal, pid, hListBox, 4
     invoke          EnableWindow, hNextBtn, 1
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
@@ -376,7 +376,7 @@ NextScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
     mov             filterVal, eax
-    invoke          FilterValueTwo, filterVal, pid, hListBox
+    invoke          FilterValueTwo, filterVal, pid, hListBox, 4
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
     jmp             WinProcExit

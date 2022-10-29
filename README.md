@@ -16,6 +16,9 @@
     - 要修改`c`，第一次筛选出多个地址，第二次筛选出两个地址A,B，第三次筛选后会显示两个B，结果也是错误的。
     - 要修改`b`，无法筛选到地址，且filter地址步长修改为1后仍然无法搜索到地址。
   - 是否有必要搜索到7FFFFFFF？7开头的地址存储的内容是什么？
+- **Debug**
+  - `b`的值用Cheat Engine也无法查到，不知道是什么原因。
+  - 根据Cheat Engine的查找结果，`c`的地址查找正确，可能是修改时出现问题，正在debug中。
 - **UI的美化**
   - 根据设置窗口图标（参考Win32窗口程序运行说明，已经创建了Resource.rc）；
   - 调整按钮等控件的风格、布局、字体（设置字体可参考https://stackoverflow.com/a/224457）等，清晰即可。
@@ -24,6 +27,8 @@
     - 修改了两个函数的参数，把`filterVal:DWORD`改成两个参数`valPtr:PTR BYTE`和`valSize:DWORD`，分别表示地址和大小（字节）；
     - 思路：可用`mov edi,valPtr`存储地址，之后就可以直接用`mov eax,[edi]`、`mov ax,[edi]`等获取不同长度的数值（需要设计具体逻辑）；
     - 搜索时使用的**步长先都使用4**（不过这样可能会有搜不到的情形，可先测试较长的类型），之后可通过快速搜索/完全搜索调节。
+  - 实现
+    - 在Filter与FilterTwo过程中加入了对WORD、BYTE类型的支持，传入参数增加了1个，调用时最后一个参数可以传入TYPE_DWORD(其实就是数值4)/TYPE_WORD/TYPE_BYTE，而filterVal可不做改变，在过程中用强制类型转换转为了对应的类型。
   - GUI部分：
     - 设置一个新的`ComboBox`，需要使用`CBS_DROPDOWNLIST`的类型（下拉菜单）；
     - 其中各项为：Byte、2 Bytes (Word)、4 Bytes (DWord)、8 Bytes (QWord)，默认选择4 Bytes (DWord)；
