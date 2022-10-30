@@ -343,7 +343,7 @@ WinProc PROC,
                 .ELSEIF     ax == 14            ; edit
                     invoke      GetDlgItemInt, hMainWnd, 13, NULL, 0
                     mov         writeData, eax
-                    invoke      Modify, pid, writeAddr, writeData
+                    invoke      Modify, pid, writeAddr, writeData, 4
                     invoke      MessageBox, hMainWnd, ADDR successMsg, ADDR windowName, MB_OK
                 .ENDIF
             .ELSEIF         bx == LBN_SELCHANGE ; listbox
@@ -364,7 +364,7 @@ NewScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
     mov             filterVal, eax
-    invoke          FilterValue, filterVal, pid, hListBox, 4
+    invoke          FilterValue, filterVal, 4, pid, hListBox
     invoke          EnableWindow, hNextBtn, 1
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
@@ -376,7 +376,7 @@ NextScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
     mov             filterVal, eax
-    invoke          FilterValueTwo, filterVal, pid, hListBox, 4
+    invoke          FilterValueTwo, filterVal, 4, pid, hListBox
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
     jmp             WinProcExit
@@ -393,5 +393,5 @@ WinProcExit:
     ret
 WinProc ENDP
 
-; END
-END                 WinMain
+END
+; END                 WinMain

@@ -2,6 +2,7 @@
 
 INCLUDE         memeditor.inc
 
+; <<<<<<<<<<<<<<<<<<<< PROC Main >>>>>>>>>>>>>>>>>>>>>>>>>
 .data
 inputNumMsg     BYTE        "%u", 0
 inputHexMsg     BYTE        "%x", 0
@@ -10,8 +11,10 @@ filterPromptMsg BYTE        "Enter the value: ", 0
 filterTwoMsg    BYTE        "Enter the value after changing:", 0
 addrPromptMsg   BYTE        "Enter the address to be edited: ", 0
 valPromptMsg    BYTE        "Enter the new value: ", 0
-inputReminder   BYTE        "Enter the operation (1-new scan, 2-next scan, 3-edit, 0-quit): ", 0
+sizePromptMsg   BYTE        "Enter the new size of memory: ", 0
+inputReminder   BYTE        "Operation (1-new, 2-next, 3-edit, 4-size (currently %d), 0-quit): ", 0
 successMsg      BYTE        "Successfully rewrite memory.", 0ah, 0dh, 0
+valSize         DWORD       4
 
 .data?
 command         DWORD       ?
@@ -19,6 +22,13 @@ pid             DWORD       ?
 filterVal       DWORD       ?
 writeAddr       DWORD       ?
 writeData       DWORD       ?
+
+; <<<<<<<<<<<<<<<<<<<< PROC InputValue >>>>>>>>>>>>>>>>>>>>>>>>>
+.data
+inputQwordMsg   BYTE        "%llu", 0
+inputDwordMsg   BYTE        "%u", 0
+inputWordMsg    BYTE        "%hu", 0
+inputByteMsg    BYTE        "%hhu", 0
 
 .code
 main PROC
@@ -31,35 +41,37 @@ main PROC
 
 MainLoop:
     ; Main loop
-    invoke      printf, OFFSET inputReminder
+    invoke      printf, OFFSET inputReminder, valSize
     invoke      scanf, OFFSET inputNumMsg, OFFSET command
     mov         eax, command
-    test        eax, eax
-    jz          Quit
     cmp         eax, 1
     je          Filter
     cmp         eax, 2
     je          Filter2
-    jmp         Edit
+    cmp         eax, 3
+    je          Edit
+    cmp         eax, 4
+    je          ChangeSize
+    jmp         Quit
 
 Filter:
     ; 1: Filter out the address (NEW)
     ; Input a value
     invoke      printf, OFFSET filterPromptMsg
-    invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
+    invoke      InputValue, OFFSET filterVal, valSize
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValue, filterVal, pid, 0, 4
+    invoke      FilterValue, filterVal, valSize, pid, 0
     jmp         MainLoop
 
 Filter2:
     ; 2: Filter out the address (NEXT)
     ; Input a value
     invoke      printf, OFFSET filterTwoMsg
-    invoke      scanf, OFFSET inputNumMsg, OFFSET filterVal
+    invoke      InputValue, OFFSET filterVal, valSize
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValueTwo, filterVal, pid, 0, 4
+    invoke      FilterValueTwo, filterVal, valSize, pid, 0
     jmp         MainLoop
 
 Edit:
@@ -70,11 +82,18 @@ Edit:
 
     ; Enter the new value
     invoke      printf, OFFSET valPromptMsg
-    invoke      scanf, OFFSET inputNumMsg, OFFSET writeData
+    invoke      InputValue, OFFSET writeData, valSize
 
     ; Confirm
-    invoke      Modify, pid, writeAddr, writeData
+    invoke      Modify, pid, writeAddr, writeData, valSize
     invoke      printf, OFFSET successMsg
+    jmp         MainLoop
+
+ChangeSize:
+    ; 4: Change the size of modified memory
+    ; Input new size
+    invoke      printf, OFFSET sizePromptMsg
+    invoke      scanf, OFFSET inputNumMsg, OFFSET valSize
     jmp         MainLoop
 
 Quit:
@@ -82,5 +101,23 @@ Quit:
     invoke      ExitProcess, 0
 main ENDP
 
-END
-; END             main
+
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+InputValue PROC,
+    dest:       PTR DWORD,      ; Destination address (always in the first byte)
+    vSize:      DWORD           ; Size of data
+; Use scanf to get different type of inputs. Save them in the given address.
+; No return value.
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+    .IF         vSize == TYPE_DWORD
+        invoke      scanf, OFFSET inputDwordMsg, dest
+    .ELSEIF     vSize == TYPE_WORD
+        invoke      scanf, OFFSET inputWordMsg, dest
+    .ELSEIF     vSize == TYPE_BYTE
+        invoke      scanf, OFFSET inputByteMsg, dest
+    .ENDIF
+    ret
+InputValue ENDP
+
+; END
+END             main

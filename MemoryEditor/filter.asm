@@ -4,10 +4,6 @@ INCLUDE         memeditor.inc
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< PROC Filter >>>>>>>>>>>>>>>>>>>>>>>>>
-TYPE_QWORD      EQU         <8>
-TYPE_DWORD      EQU         <4>
-TYPE_WORD       EQU         <2>
-TYPE_BYTE       EQU         <1>
 bufDWORD        DWORD       ?
 bufWORD         WORD        ?
 bufBYTE         BYTE        ?
@@ -15,25 +11,35 @@ bufBYTE         BYTE        ?
 filterMsg       BYTE        "Use value %u to filter", 0ah, 0dh, 0
 filterAnsMsg    BYTE        "Found address: %08X", 0ah, 0dh, 0
 testMsg         BYTE        "val is %08X", 0ah, 0dh, 0
-addrValMsg      BYTE        "%08X    %u", 0
 msgBuffer       BYTE        24 DUP(0)
 memMAX          DWORD       0BFFFFFFFH
 memMIN          DWORD       0H
 lastsearch      DWORD       10240 DUP(?)
 totaladdr       DWORD       0
 errorFilterMsg  BYTE        "Failed to filter", 0ah, 0dh, 0
+newLineMsg      BYTE        0ah, 0dh, 0
 
 ; <<<<<<<<<<<<<<<<<<<< PROC Filter_2 >>>>>>>>>>>>>>>>>>>>>>>>>
 filterTwoAnsMsg BYTE        "Found changed value's address: %08X", 0ah, 0dh, 0
 findDoneMsg     BYTE        "Find Done!", 0ah, 0dh, 0
 
+; <<<<<<<<<<<<<<<<<<<< PROC MakeMessage >>>>>>>>>>>>>>>>>>>>>>>>>
+addrDwordMsg     BYTE        "%08X    %u", 0
+addrWordMsg      BYTE        "%08X    %hu", 0
+addrByteMsg      BYTE        "%08X    %hhu", 0
+
+
 .code
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 FilterValue PROC,
     filterVal:  DWORD,                 ; use this value to select addresses
+    valSize:    DWORD,                 ; the type of the value to find
     pid:        DWORD,                 ; which process
     hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
-    typeOfData: DWORD                  ; the type of the value to find
+    ; step:       DWORD,                 ; address increment in scanning
+    ; condition:  DWORD,                 ; signify >, >=, =, <=, < (1 to 5, see memeditor.inc)
+    ; memMin:     DWORD,                 ; beginning of scan range
+    ; memMax:     DWORD                  ; end of scan range
 ; Filter out addresses according to the value.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
@@ -101,63 +107,60 @@ PIECE:
     cmp         edi, maxAddr
     je          BLOCK
 
-    .IF          (typeOfData == TYPE_DWORD)
-    invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, SIZEOF bufDWORD, 0
-    test        eax, eax
-    jz          accessFailed
-    mov         eax, filterVal
-    cmp         eax, bufDWORD
-    je          SUCCESS_find
-    add         edi, 4
-    jmp         PIECE
-    ret
-    .ENDIF
+    .IF         valSize == TYPE_DWORD
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, SIZEOF bufDWORD, 0
+        test        eax, eax
+        jz          accessFailed
+        mov         eax, filterVal
+        cmp         eax, bufDWORD
+        je          SUCCESS_find
+        add         edi, 4
+        jmp         PIECE
 
-    .IF          (typeOfData == TYPE_WORD)
-    invoke      ReadProcessMemory, ebx, edi, OFFSET bufWORD, SIZEOF bufWORD, 0
-    test        eax, eax
-    jz          accessFailed
-    mov         ax, WORD PTR filterVal
-    cmp         ax, bufWORD
-    je          SUCCESS_find
-    add         edi, 2
-    jmp         PIECE
-    ret
-    .ENDIF
+    .ELSEIF     valSize == TYPE_WORD
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufWORD, SIZEOF bufWORD, 0
+        test        eax, eax
+        jz          accessFailed
+        mov         ax, WORD PTR filterVal
+        cmp         ax, bufWORD
+        je          SUCCESS_find
+        add         edi, 2
+        jmp         PIECE
 
-    .IF          (typeOfData == TYPE_BYTE)
-    invoke      ReadProcessMemory, ebx, edi, OFFSET bufBYTE, SIZEOF bufBYTE, 0
-    test        eax, eax
-    jz          accessFailed
-    mov         al, BYTE PTR filterVal
-    cmp         al, bufBYTE
-    je          SUCCESS_find
-    add         edi, 1
-    jmp         PIECE
-    ret
-    .ENDIF
+    .ELSEIF     valSize == TYPE_BYTE
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufBYTE, SIZEOF bufBYTE, 0
+        test        eax, eax
+        jz          accessFailed
+        mov         al, BYTE PTR filterVal
+        cmp         al, bufBYTE
+        je          SUCCESS_find
+        add         edi, 1
+        jmp         PIECE
 
+    .ENDIF
     ret
+
 SUCCESS_find:
     mov         eax, totaladdr
     cmp         eax, LENGTH lastsearch
     jae         fail_RET
     mov         ansAddr, edi
-    add         edi, typeOfData
+    add         edi, valSize
     mov         eax, ansAddr
     mov         [esi], eax
     inc         totaladdr
     add         esi, TYPE lastsearch
+    invoke      MakeMessage, OFFSET msgBuffer, ansAddr, filterVal, valSize
     mov         eax, gui
     test        eax, eax
     jnz         updateListBox
-    invoke      printf, OFFSET filterAnsMsg, ansAddr
+    invoke      printf, OFFSET msgBuffer
+    invoke      printf, OFFSET newLineMsg
     jmp         SUCCESS_end
 updateListBox:
     mov         eax, totaladdr
     cmp         eax, 256
     ja          SUCCESS_end
-    invoke      sprintf, OFFSET msgBuffer, OFFSET addrValMsg, ansAddr, filterVal
     invoke      SendMessage, hListBox, LB_ADDSTRING, 0, ADDR msgBuffer
     invoke      SendMessage, hListBox, LB_SETITEMDATA, eax, totaladdr
     invoke      UpdateWindow, hListBox
@@ -167,7 +170,7 @@ SUCCESS_end:
 fail_RET:
     ret
 accessFailed:
-    add         edi, typeOfData
+    add         edi, valSize
     jmp         PIECE
     ret
 filterProcReadFailed:
@@ -179,9 +182,13 @@ FilterValue ENDP
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 FilterValueTwo PROC,
     filterVal:  DWORD,                 ; use this value to select addresses
+    valSize:    DWORD,                 ; the type of the value to find
     pid:        DWORD,                 ; which process
     hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
-    typeOfData: DWORD                  ; the type of the value to find
+    ; step:       DWORD,                 ; address increment in scanning
+    ; condition:  DWORD,                 ; signify >, >=, =, <=, < (1 to 5)
+    ; memMin:     DWORD,                 ; beginning of scan range
+    ; memMax:     DWORD                  ; end of scan range
 ; Select addresses according to the value from a given set.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
@@ -217,28 +224,24 @@ findLoop:
     inc         count
     mov         ebx, [edi]
     
-    .IF          (typeOfData == TYPE_DWORD)
-    invoke      ReadProcessMemory, handle, ebx, ADDR tmpValDWORD, TYPE_DWORD, 0
-    add         edi, TYPE lastsearch
-    mov         eax, tmpValDWORD
-    cmp         eax, filterVal
-    je          findSuccess
-    .ENDIF
-
-    .IF          (typeOfData == TYPE_WORD)
-    invoke      ReadProcessMemory, handle, ebx, ADDR tmpValWORD, TYPE_WORD, 0
-    add         edi, TYPE lastsearch
-    mov         ax, tmpValWORD
-    cmp         ax, WORD PTR filterVal
-    je          findSuccess
-    .ENDIF
-
-    .IF          (typeOfData == TYPE_BYTE)
-    invoke      ReadProcessMemory, handle, ebx, ADDR tmpValBYTE, TYPE_BYTE, 0
-    add         edi, TYPE lastsearch
-    mov         al, tmpValBYTE
-    cmp         al, BYTE PTR filterVal
-    je          findSuccess
+    .IF          valSize == TYPE_DWORD
+        invoke      ReadProcessMemory, handle, ebx, ADDR tmpValDWORD, TYPE_DWORD, 0
+        add         edi, TYPE lastsearch
+        mov         eax, tmpValDWORD
+        cmp         eax, filterVal
+        je          findSuccess
+    .ELSEIF      valSize == TYPE_WORD
+        invoke      ReadProcessMemory, handle, ebx, ADDR tmpValWORD, TYPE_WORD, 0
+        add         edi, TYPE lastsearch
+        mov         ax, tmpValWORD
+        cmp         ax, WORD PTR filterVal
+        je          findSuccess
+    .ELSEIF      valSize == TYPE_BYTE
+        invoke      ReadProcessMemory, handle, ebx, ADDR tmpValBYTE, TYPE_BYTE, 0
+        add         edi, TYPE lastsearch
+        mov         al, tmpValBYTE
+        cmp         al, BYTE PTR filterVal
+        je          findSuccess
     .ENDIF
 
     jmp         findLoop
@@ -246,17 +249,18 @@ findLoop:
 findSuccess:
     mov         [esi], ebx
     add         esi, TYPE lastsearch
+    invoke      MakeMessage, OFFSET msgBuffer, ebx, filterVal, valSize
     inc         newCount
     mov         eax, gui
     test        eax, eax
     jnz         updateListBox
-    invoke      printf, OFFSET filterTwoAnsMsg, ebx
+    invoke      printf, OFFSET msgBuffer
+    invoke      printf, OFFSET newLineMsg
     jmp         SUCCESS_end
 updateListBox:
     mov         eax, newCount
     cmp         eax, 256
     ja          SUCCESS_end
-    invoke      sprintf, OFFSET msgBuffer, OFFSET addrValMsg, ebx, filterVal
     invoke      SendMessage, hListBox, LB_ADDSTRING, 0, ADDR msgBuffer
     invoke      SendMessage, hListBox, LB_SETITEMDATA, eax, newCount
     invoke      UpdateWindow, hListBox
@@ -277,7 +281,7 @@ FilterValueTwo ENDP
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 FetchAddr PROC, 
     index:      DWORD,                ; index in addresses
-    address:    PTR DWORD,            ; the address of Address to be saved
+    address:    PTR DWORD             ; the address of Address to be saved
 ; Get address according to the index.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
@@ -290,5 +294,26 @@ FetchAddr PROC,
     mov         [edi], ebx
     ret
 FetchAddr ENDP
+
+
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+MakeMessage PROC, 
+    dest:       PTR BYTE,           ; message buffer
+    address:    DWORD,              ; address
+    value:      DWORD,              ; data value
+    valSize:    DWORD               ; the size of data
+; Generate listbox message according to the address and value.
+; No return value.
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+    .IF         valSize == TYPE_DWORD
+        invoke      sprintf, dest, OFFSET addrDwordMsg, address, value
+    .ELSEIF     valSize == TYPE_WORD
+        invoke      sprintf, dest, OFFSET addrWordMsg, address, WORD PTR value
+    .ELSEIF     valSize == TYPE_BYTE
+        invoke      sprintf, dest, OFFSET addrByteMsg, address, BYTE PTR value
+    .ENDIF
+    ret
+MakeMessage ENDP
+
 
 END
