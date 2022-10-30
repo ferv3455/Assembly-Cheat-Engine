@@ -245,6 +245,7 @@ findLoop:
     ret
 findSuccess:
     mov         [esi], ebx
+    add         esi, TYPE lastsearch
     inc         newCount
     mov         eax, gui
     test        eax, eax
