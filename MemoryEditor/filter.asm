@@ -110,7 +110,7 @@ PIECE:
         jz          accessFailed
         mov         eax, scanVal.value
         cmp         eax, bufDWORD
-        filter_core_cmp scanMode.condition, SUCCESS_find
+        filter_core_cmp scanMode.condition
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -120,7 +120,7 @@ PIECE:
         jz          accessFailed
         mov         ax, WORD PTR scanVal.value
         cmp         ax, bufWORD
-        filter_core_cmp scanMode.condition, SUCCESS_find
+        filter_core_cmp scanMode.condition
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -130,7 +130,7 @@ PIECE:
         jz          accessFailed
         mov         al, BYTE PTR scanVal.value
         cmp         al, bufBYTE
-        filter_core_cmp scanMode.condition, SUCCESS_find
+        filter_core_cmp localCondition
         add         edi, scanMode.step
         jmp         PIECE
 
