@@ -50,6 +50,9 @@ FilterValue PROC,
     LOCAL       ebxStore:       DWORD
     LOCAL       gui:            DWORD
 
+    ; let condition be a const
+    condition   EQU     ScanMode.condition
+
     ; check whether GUI is used
     mov         gui, 0
     mov         eax, hListBox
@@ -110,7 +113,7 @@ PIECE:
         jz          accessFailed
         mov         eax, scanVal.value
         cmp         eax, bufDWORD
-        filter_core_cmp scanMode.condition
+        filter_core_cmp condition
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -120,7 +123,7 @@ PIECE:
         jz          accessFailed
         mov         ax, WORD PTR scanVal.value
         cmp         ax, bufWORD
-        filter_core_cmp scanMode.condition
+        filter_core_cmp condition
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -130,7 +133,7 @@ PIECE:
         jz          accessFailed
         mov         al, BYTE PTR scanVal.value
         cmp         al, bufBYTE
-        filter_core_cmp localCondition
+        filter_core_cmp condition
         add         edi, scanMode.step
         jmp         PIECE
 
