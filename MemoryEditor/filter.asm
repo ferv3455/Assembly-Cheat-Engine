@@ -32,14 +32,10 @@ addrByteMsg      BYTE        "%08X    %hhu", 0
 
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 FilterValue PROC, 
-    filterVal:  DWORD,                 ; use this value to select addresses
-    valSize:    DWORD,                 ; the type of the value to find
     pid:        DWORD,                 ; which process
     hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
-    step:       DWORD,                 ; address increment in scanning
-    condition:  DWORD,                 ; signify >, >=, =, <=, < (1 to 5, see memeditor.inc)
-    memMin:     DWORD,                 ; beginning of scan range
-    memMax:     DWORD                  ; end of scan range
+    scanVal:    ScanValue,             ; use this value to select addresses
+    scanMode:   ScanMode               ; specification in scanning
 ; Filter out addresses according to the value.
 ; No return value.
 
@@ -62,7 +58,7 @@ FilterValue PROC,
     mov         gui, 1
 
 Begin:
-    ; invoke      printf, OFFSET filterMsg, filterVal
+    ; invoke      printf, OFFSET filterMsg, scanVal.value
     mov         totaladdr, 0
     invoke      OpenProcess, PROCESS_ALL_ACCESS, 0, pid ; open process according to pid
     test        eax, eax
@@ -76,18 +72,18 @@ Begin:
     ; invoke      ReadProcessMemory, ebx, DWORD PTR hMod[0], OFFSET buf, SIZEOF buf, ADDR numOfBytesRead
     ; test        eax, eax
     ; jz          filterProcReadFailed
-    mov         edi, memMin
+    mov         edi, scanMode.memMin
     mov         nowAddr, edi
     mov         maxAddr, edi
-    mov         eax, memMin
-    add         eax, memMax
-    mov         memMax, eax
-    ;mov         edi, memMin
+    mov         eax, scanMode.memMin
+    add         eax, scanMode.memMax
+    mov         scanMode.memMax, eax
+    ; mov         edi, scanMode.memMin
 
     mov         esi, OFFSET lastsearch
 
 BLOCK:
-    cmp         edi, memMax
+    cmp         edi, scanMode.memMax
     ja          fail_RET
     mov         ebx, ebxStore
     invoke      VirtualQueryEx, ebx, edi, ADDR mbi, SIZEOF mbi
@@ -108,34 +104,34 @@ PIECE:
     cmp         edi, maxAddr
     je          BLOCK
 
-    .IF         valSize == TYPE_DWORD
+    .IF         scanVal.valSize == TYPE_DWORD
         invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, SIZEOF bufDWORD, 0
         test        eax, eax
         jz          accessFailed
-        mov         eax, filterVal
+        mov         eax, scanVal.value
         cmp         eax, bufDWORD
-        filter_core_cmp condition
-        add         edi, step
+        filter_core_cmp scanMode.condition, SUCCESS_find
+        add         edi, scanMode.step
         jmp         PIECE
 
-    .ELSEIF     valSize == TYPE_WORD
+    .ELSEIF     scanVal.valSize == TYPE_WORD
         invoke      ReadProcessMemory, ebx, edi, OFFSET bufWORD, SIZEOF bufWORD, 0
         test        eax, eax
         jz          accessFailed
-        mov         ax, WORD PTR filterVal
+        mov         ax, WORD PTR scanVal.value
         cmp         ax, bufWORD
-        filter_core_cmp condition
-        add         edi, step
+        filter_core_cmp scanMode.condition, SUCCESS_find
+        add         edi, scanMode.step
         jmp         PIECE
 
-    .ELSEIF     valSize == TYPE_BYTE
+    .ELSEIF     scanVal.valSize == TYPE_BYTE
         invoke      ReadProcessMemory, ebx, edi, OFFSET bufBYTE, SIZEOF bufBYTE, 0
         test        eax, eax
         jz          accessFailed
-        mov         al, BYTE PTR filterVal
+        mov         al, BYTE PTR scanVal.value
         cmp         al, bufBYTE
-        filter_core_cmp condition
-        add         edi, step
+        filter_core_cmp scanMode.condition, SUCCESS_find
+        add         edi, scanMode.step
         jmp         PIECE
 
     .ENDIF
@@ -146,12 +142,12 @@ SUCCESS_find:
     cmp         eax, LENGTH lastsearch
     jae         fail_RET
     mov         ansAddr, edi
-    add         edi, step
+    add         edi, scanMode.step
     mov         eax, ansAddr
     mov         [esi], eax
     inc         totaladdr
     add         esi, TYPE lastsearch
-    invoke      MakeMessage, OFFSET msgBuffer, ansAddr, filterVal, valSize
+    invoke      MakeMessage, OFFSET msgBuffer, ansAddr, scanVal.value, scanVal.valSize
     mov         eax, gui
     test        eax, eax
     jnz         updateListBox
@@ -171,7 +167,7 @@ SUCCESS_end:
 fail_RET:
     ret
 accessFailed:
-    add         edi, step
+    add         edi, scanMode.step
     jmp         PIECE
     ret
 filterProcReadFailed:
@@ -182,10 +178,9 @@ FilterValue ENDP
 
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 FilterValueTwo PROC,
-    filterVal:  DWORD,                 ; use this value to select addresses
-    valSize:    DWORD,                 ; the type of the value to find
     pid:        DWORD,                 ; which process
     hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
+    scanVal:    ScanValue              ; use this value to select addresses
 ; Select addresses according to the value from a given set.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
@@ -221,23 +216,23 @@ findLoop:
     inc         count
     mov         ebx, [edi]
     
-    .IF          valSize == TYPE_DWORD
+    .IF          scanVal.valSize == TYPE_DWORD
         invoke      ReadProcessMemory, handle, ebx, ADDR tmpValDWORD, TYPE_DWORD, 0
         add         edi, TYPE lastsearch
         mov         eax, tmpValDWORD
-        cmp         eax, filterVal
+        cmp         eax, scanVal.value
         je          findSuccess
-    .ELSEIF      valSize == TYPE_WORD
+    .ELSEIF      scanVal.valSize == TYPE_WORD
         invoke      ReadProcessMemory, handle, ebx, ADDR tmpValWORD, TYPE_WORD, 0
         add         edi, TYPE lastsearch
         mov         ax, tmpValWORD
-        cmp         ax, WORD PTR filterVal
+        cmp         ax, WORD PTR scanVal.value
         je          findSuccess
-    .ELSEIF      valSize == TYPE_BYTE
+    .ELSEIF      scanVal.valSize == TYPE_BYTE
         invoke      ReadProcessMemory, handle, ebx, ADDR tmpValBYTE, TYPE_BYTE, 0
         add         edi, TYPE lastsearch
         mov         al, tmpValBYTE
-        cmp         al, BYTE PTR filterVal
+        cmp         al, BYTE PTR scanVal.value
         je          findSuccess
     .ENDIF
 
@@ -246,7 +241,7 @@ findLoop:
 findSuccess:
     mov         [esi], ebx
     add         esi, TYPE lastsearch
-    invoke      MakeMessage, OFFSET msgBuffer, ebx, filterVal, valSize
+    invoke      MakeMessage, OFFSET msgBuffer, ebx, scanVal.value, scanVal.valSize
     inc         newCount
     mov         eax, gui
     test        eax, eax

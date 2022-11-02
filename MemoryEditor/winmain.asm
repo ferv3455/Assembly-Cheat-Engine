@@ -85,7 +85,8 @@ hLoadingLabel   DWORD       ?
 ; <<<<<<<<<<<<<<<<<<<< Main Logics >>>>>>>>>>>>>>>>>>>>>>>>>
 state           DWORD       0
 pid             DWORD       ?
-filterVal       DWORD       ?
+scanVal         ScanValue   <0, 4>
+scanMode        ScanMode    <4, COND_EQ, DEFAULT_MEMMIN, DEFAULT_MEMMAX>
 writeAddr       DWORD       ?
 writeData       DWORD       ?
 addrMsg         BYTE        "%08X", 0
@@ -363,8 +364,8 @@ NewScan:
     invoke          UpdateWindow, hLoadingLabel
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
-    mov             filterVal, eax
-    invoke          FilterValue, filterVal, 4, pid, hListBox, 4, 3, DEFAULT_MEMMIN, DEFAULT_MEMMAX
+    mov             scanVal.value, eax
+    invoke          FilterValue, pid, 0, scanVal, scanMode
     invoke          EnableWindow, hNextBtn, 1
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
@@ -375,8 +376,8 @@ NextScan:
     invoke          UpdateWindow, hLoadingLabel
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
-    mov             filterVal, eax
-    invoke          FilterValueTwo, filterVal, 4, pid, hListBox
+    mov             scanVal.value, eax
+    invoke          FilterValueTwo, pid, 0, scanVal
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
     jmp             WinProcExit

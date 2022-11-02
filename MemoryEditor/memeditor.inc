@@ -14,6 +14,19 @@ INCLUDELIB      kernel32.lib
 INCLUDELIB      user32.lib 
 INCLUDELIB      psapi.lib
 
+; Structs used in scanning addresses
+ScanValue STRUCT
+    value       DWORD       ?           ; use this value to select addresses
+    valSize     DWORD       ?           ; the type of the value to find
+ScanValue ENDS
+
+ScanMode STRUCT
+    step        DWORD       ?           ; address increment in scanning
+    condition   DWORD       ?           ; signify >, >=, =, <=, <
+    memMin      DWORD       ?           ; beginning of scan range
+    memMax      DWORD       ?           ; end of scan range       
+ScanMode ENDS
+
 ; Irvine32.lib
 DumpRegs        PROTO
 ExitProcess     PROTO, dwExitCode:DWORD
@@ -29,14 +42,8 @@ FetchProc       PROTO, index:DWORD, pid:PTR DWORD
 GetPidByTitle   PROTO, windowTitle:PTR BYTE, pid:PTR DWORD
 
 ; filter.asm
-FilterValue     PROTO, filterVal:DWORD, valSize:DWORD, pid:DWORD, hListBox:DWORD
-
-; New definition and parameters will be:
-; FilterValue     PROTO, filterVal:DWORD, valSize:DWORD, pid:DWORD, hListBox:DWORD,
-                    ;    step:DWORD, condition:DWORD, memMin:DWORD, memMax:DWORD
-; More details can be referred to in filter.asm
-
-FilterValueTwo  PROTO, filterVal:DWORD, valSize:DWORD, pid:DWORD, hListBox:DWORD
+FilterValue     PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue, scanMode:ScanMode
+FilterValueTwo  PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue
 FetchAddr       PROTO, index:DWORD, address:PTR DWORD
 MakeMessage     PROTO, dest:PTR BYTE, address:DWORD, value:DWORD, valSize:DWORD
 
@@ -54,7 +61,7 @@ TYPE_BYTE       EQU         <1>
 
 ; Range Constants
 DEFAULT_MEMMIN  EQU         <0h>
-DEFAULT_MEMMIN  EQU         <0BFFFFFFFh>
+DEFAULT_MEMMAX  EQU         <0BFFFFFFFh>
 
 ; Scan Conditions
 COND_GT         EQU         <1>
