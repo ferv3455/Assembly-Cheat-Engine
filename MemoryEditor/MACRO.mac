@@ -1,0 +1,18 @@
+; <<<<<<<<<<<<<<<<<<<< MACRO  filter_core_cmp>>>>>>>>>>>>>>>>>>>>>>>>>
+filter_core_cmp MACRO filterType, SUCCESS_find
+    IF  (filterType EQ COND_GT) 
+        ja          SUCCESS_find
+    ENDIF
+    IF  (filterType EQ COND_LT) 
+        jb          SUCCESS_find
+    ENDIF
+    IF  (filterType EQ COND_EQ) 
+        je          SUCCESS_find
+    ENDIF
+    IF  (filterType EQ COND_LE) 
+        jbe         SUCCESS_find
+    ENDIF
+    IF  (filterType EQ COND_GE) 
+        jae         SUCCESS_find
+    ENDIF
+ENDM

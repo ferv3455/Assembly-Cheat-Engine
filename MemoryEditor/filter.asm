@@ -1,6 +1,7 @@
 ; FilterValue
 
 INCLUDE         memeditor.inc
+INCLUDE         MACRO.mac
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< PROC Filter >>>>>>>>>>>>>>>>>>>>>>>>>
@@ -12,8 +13,6 @@ filterMsg       BYTE        "Use value %u to filter", 0ah, 0dh, 0
 filterAnsMsg    BYTE        "Found address: %08X", 0ah, 0dh, 0
 testMsg         BYTE        "val is %08X", 0ah, 0dh, 0
 msgBuffer       BYTE        24 DUP(0)
-memMAX          DWORD       0BFFFFFFFH
-memMIN          DWORD       0H
 lastsearch      DWORD       10240 DUP(?)
 totaladdr       DWORD       0
 errorFilterMsg  BYTE        "Failed to filter", 0ah, 0dh, 0
@@ -30,18 +29,20 @@ addrByteMsg      BYTE        "%08X    %hhu", 0
 
 
 .code
+
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
-FilterValue PROC,
+FilterValue PROC, 
     filterVal:  DWORD,                 ; use this value to select addresses
     valSize:    DWORD,                 ; the type of the value to find
     pid:        DWORD,                 ; which process
     hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
-    ; step:       DWORD,                 ; address increment in scanning
-    ; condition:  DWORD,                 ; signify >, >=, =, <=, < (1 to 5, see memeditor.inc)
-    ; memMin:     DWORD,                 ; beginning of scan range
-    ; memMax:     DWORD                  ; end of scan range
+    step:       DWORD,                 ; address increment in scanning
+    condition:  DWORD,                 ; signify >, >=, =, <=, < (1 to 5, see memeditor.inc)
+    memMin:     DWORD,                 ; beginning of scan range
+    memMax:     DWORD                  ; end of scan range
 ; Filter out addresses according to the value.
 ; No return value.
+
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
     ; local variables used in iteration
     LOCAL       hMod[100]:      DWORD
@@ -75,18 +76,18 @@ Begin:
     ; invoke      ReadProcessMemory, ebx, DWORD PTR hMod[0], OFFSET buf, SIZEOF buf, ADDR numOfBytesRead
     ; test        eax, eax
     ; jz          filterProcReadFailed
-    mov         edi, memMIN
+    mov         edi, memMin
     mov         nowAddr, edi
     mov         maxAddr, edi
-    mov         eax, memMIN
-    add         eax, memMAX
-    mov         memMAX, eax
-    ;mov         edi, memMIN
+    mov         eax, memMin
+    add         eax, memMax
+    mov         memMax, eax
+    ;mov         edi, memMin
 
     mov         esi, OFFSET lastsearch
 
 BLOCK:
-    cmp         edi, memMAX
+    cmp         edi, memMax
     ja          fail_RET
     mov         ebx, ebxStore
     invoke      VirtualQueryEx, ebx, edi, ADDR mbi, SIZEOF mbi
@@ -113,8 +114,8 @@ PIECE:
         jz          accessFailed
         mov         eax, filterVal
         cmp         eax, bufDWORD
-        je          SUCCESS_find
-        add         edi, 4
+        filter_core_cmp condition
+        add         edi, step
         jmp         PIECE
 
     .ELSEIF     valSize == TYPE_WORD
@@ -123,8 +124,8 @@ PIECE:
         jz          accessFailed
         mov         ax, WORD PTR filterVal
         cmp         ax, bufWORD
-        je          SUCCESS_find
-        add         edi, 2
+        filter_core_cmp condition
+        add         edi, step
         jmp         PIECE
 
     .ELSEIF     valSize == TYPE_BYTE
@@ -133,8 +134,8 @@ PIECE:
         jz          accessFailed
         mov         al, BYTE PTR filterVal
         cmp         al, bufBYTE
-        je          SUCCESS_find
-        add         edi, 1
+        filter_core_cmp condition
+        add         edi, step
         jmp         PIECE
 
     .ENDIF
@@ -145,7 +146,7 @@ SUCCESS_find:
     cmp         eax, LENGTH lastsearch
     jae         fail_RET
     mov         ansAddr, edi
-    add         edi, valSize
+    add         edi, step
     mov         eax, ansAddr
     mov         [esi], eax
     inc         totaladdr
@@ -170,7 +171,7 @@ SUCCESS_end:
 fail_RET:
     ret
 accessFailed:
-    add         edi, valSize
+    add         edi, step
     jmp         PIECE
     ret
 filterProcReadFailed:
@@ -185,10 +186,6 @@ FilterValueTwo PROC,
     valSize:    DWORD,                 ; the type of the value to find
     pid:        DWORD,                 ; which process
     hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
-    ; step:       DWORD,                 ; address increment in scanning
-    ; condition:  DWORD,                 ; signify >, >=, =, <=, < (1 to 5)
-    ; memMin:     DWORD,                 ; beginning of scan range
-    ; memMax:     DWORD                  ; end of scan range
 ; Select addresses according to the value from a given set.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««

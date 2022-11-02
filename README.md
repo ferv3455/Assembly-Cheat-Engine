@@ -21,6 +21,14 @@
 - **Filter部分优化**：
   - 根据下面的过程定义添加Filter的参数，实现搜索地址步长选择、搜索条件选择（如大于小于）、搜索范围选择；
   - 部分常量添加在了`memeditor.inc`文件中。
+  - COND_GT 1
+  - COND_GE 2
+  - COND_EQ 3
+  - COND_LE 4
+  - COND_LT 5
+- 需求: 如用户未输入memMin及memMax,使用memMIN=0, memMAX=0xBFFFFFFF（
+  memeditor.inc中定义的DEFAULT_MEMMIN/MAX）, 若用户输入的memMin为负数或memMax大于0xFFFFFFFF, 则直接报错。
+- FilterValueTwo不需要添加参数，因为是在第一步得到的地址列表中搜索
 ```nasm
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 FilterValue PROC,

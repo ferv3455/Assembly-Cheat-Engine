@@ -364,7 +364,7 @@ NewScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
     mov             filterVal, eax
-    invoke          FilterValue, filterVal, 4, pid, hListBox
+    invoke          FilterValue, filterVal, 4, pid, hListBox, 4, 3, DEFAULT_MEMMIN, DEFAULT_MEMMAX
     invoke          EnableWindow, hNextBtn, 1
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel

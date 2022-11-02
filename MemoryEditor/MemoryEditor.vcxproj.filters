@@ -35,6 +35,9 @@
     <None Include="memeditor.inc">
       <Filter>源文件</Filter>
     </None>
+    <None Include="MACRO.mac">
+      <Filter>源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
