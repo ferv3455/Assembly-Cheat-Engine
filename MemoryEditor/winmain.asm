@@ -394,5 +394,5 @@ WinProcExit:
     ret
 WinProc ENDP
 
-END
-; END                 WinMain
+; END
+END                 WinMain
