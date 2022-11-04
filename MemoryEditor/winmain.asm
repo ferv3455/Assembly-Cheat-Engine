@@ -556,5 +556,5 @@ AdjWidgetState PROC,
 AdjWidgetState ENDP
 
 
-END
-; END                 WinMain
+; END
+END                 WinMain

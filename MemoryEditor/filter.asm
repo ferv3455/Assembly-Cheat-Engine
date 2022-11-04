@@ -113,7 +113,9 @@ PIECE:
         jz          accessFailed
         mov         eax, scanVal.value
         cmp         eax, bufDWORD
-        filter_core_cmp condition
+        ; TODO
+        je          SUCCESS_find
+        ; filter_core_cmp condition
         add         edi, scanMode.step
         jmp         PIECE
 
