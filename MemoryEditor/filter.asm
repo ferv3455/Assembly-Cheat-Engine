@@ -154,7 +154,6 @@ SUCCESS_find:
     mov         eax, gui
     test        eax, eax
     jnz         updateListBox
-    invoke      SendMessage, hListBox, LB_ADDSTRING, 0, ADDR msgBuffer
     invoke      printf, OFFSET msgBuffer
     invoke      printf, OFFSET newLineMsg
     jmp         SUCCESS_end

@@ -53,6 +53,9 @@ Modify          PROTO, pid:DWORD, writeAddr:DWORD, writeData:DWORD, valSize:DWOR
 ; main.asm
 InputValue      PROTO, dest:PTR DWORD, vSize:DWORD
 
+; winmain.asm
+AdjWidgetState  PROTO, newState:DWORD
+
 ; Type Constants
 TYPE_QWORD      EQU         <8>
 TYPE_DWORD      EQU         <4>

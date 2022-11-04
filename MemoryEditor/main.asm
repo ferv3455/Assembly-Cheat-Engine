@@ -119,5 +119,5 @@ InputValue PROC,
     ret
 InputValue ENDP
 
-END
-; END             main
+; END
+END             main

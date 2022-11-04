@@ -32,7 +32,8 @@ BUTTON_STYLE = WS_CHILD+WS_VISIBLE+BS_PUSHBUTTON
 EDIT_STYLE = WS_CHILD+WS_VISIBLE+WS_BORDER+ES_NUMBER
 ADDR_STYLE = WS_CHILD+WS_VISIBLE
 TEXT_STYLE = WS_CHILD+WS_VISIBLE
-LISTBOX_STYLE = WS_CHILD+WS_VISIBLE+WS_VSCROLL+LBS_NOTIFY+WS_BORDER+LBS_MULTICOLUMN
+; LISTBOX_STYLE = WS_CHILD+WS_VISIBLE+WS_VSCROLL+LBS_NOTIFY+WS_BORDER+LBS_MULTICOLUMN
+LISTBOX_STYLE = WS_CHILD+WS_VISIBLE+WS_VSCROLL+LBS_NOTIFY+WS_BORDER
 COMBOBOX_STYLE = WS_CHILD+WS_VISIBLE+CBS_DROPDOWNLIST+CBS_HASSTRINGS
 
 .data
@@ -57,6 +58,7 @@ quitBtn         BYTE        "Quit Process", 0
 selBtn          BYTE        "Select Process", 0
 newBtn          BYTE        "New", 0
 nextBtn         BYTE        "Next", 0
+firstBtn        BYTE        "First", 0
 filtLabel       BYTE        "Filtering Address: ", 0
 valLabel        BYTE        "Value: ", 0
 editLabel       BYTE        "Edit Memory: ", 0
@@ -90,6 +92,7 @@ hQuitBtn        DWORD       ?
 hSelectBtn      DWORD       ?
 hFiltLabel      DWORD       ?
 hNewBtn         DWORD       ?
+hFirstBtn       DWORD       ?
 hNextBtn        DWORD       ?
 hValLabel       DWORD       ?
 hValEdit        DWORD       ?
@@ -104,9 +107,12 @@ hScanTpLabel    DWORD       ?
 hScanTpCmbox    DWORD       ?
 hValTpLabel     DWORD       ?
 hValTpCmbox     DWORD       ?
+hMemOptLabel    DWORD       ?
+hMemOptCmbox    DWORD       ?
 hStartEdit      DWORD       ?
 hStopEdit       DWORD       ?
-hMemOptCmbox    DWORD       ?
+hStartLabel     DWORD       ?
+hStopLabel      DWORD       ?
 
 ; <<<<<<<<<<<<<<<<<<<< Main Logics >>>>>>>>>>>>>>>>>>>>>>>>>
 state           DWORD       0
@@ -170,7 +176,6 @@ WinMain PROC
                     BUTTON_STYLE, 360, 20, 200, 40,
                     hMainWnd, 2, hInstance, NULL
     mov         hQuitBtn, eax
-    invoke      EnableWindow, hQuitBtn, 0
 
     ; select button
     invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR selBtn,
@@ -189,14 +194,18 @@ WinMain PROC
                     BUTTON_STYLE, 360, 210, 80, 30,             
                     hMainWnd, 5, hInstance, NULL
     mov         hNewBtn, eax
-    invoke      EnableWindow, hNewBtn, 0
+
+    ; first button
+    invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR firstBtn,
+                    BUTTON_STYLE, 360, 210, 80, 30,             
+                    hMainWnd, 26, hInstance, NULL
+    mov         hFirstBtn, eax
     
     ; next button
     invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR nextBtn,
                     BUTTON_STYLE, 480, 210, 80, 30,             
                     hMainWnd, 6, hInstance, NULL
     mov         hNextBtn, eax
-    invoke      EnableWindow, hNextBtn, 0
 
     ; value label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR valLabel,
@@ -209,7 +218,6 @@ WinMain PROC
                     EDIT_STYLE, 440, 250, 120, 30,             
                     hMainWnd, 8, hInstance, NULL
     mov         hValEdit, eax
-    invoke      EnableWindow, hValEdit, 0
 
     ; edit label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR editLabel,
@@ -228,7 +236,6 @@ WinMain PROC
                     EDIT_STYLE, 440, 460, 120, 30,             
                     hMainWnd, 11, hInstance, NULL
     mov         hAddrEdit, eax
-    invoke      EnableWindow, hAddrEdit, 0
 
     ; new value label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR newValLabel,
@@ -241,14 +248,12 @@ WinMain PROC
                     EDIT_STYLE, 440, 500, 120, 30,             
                     hMainWnd, 13, hInstance, NULL
     mov         hNewValEdit, eax
-    invoke      EnableWindow, hNewValEdit, 0
 
     ; edit button
     invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR editBtn,
                     BUTTON_STYLE, 360, 540, 200, 40,
                     hMainWnd, 14, hInstance, NULL
     mov         hEditBtn, eax
-    invoke      EnableWindow, hEditBtn, 0
 
     ; loading label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR loadingLabel,
@@ -292,6 +297,7 @@ WinMain PROC
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR memOptLabel,
                     TEXT_STYLE, 360, 290, 150, 30,
                     hMainWnd, 20, hInstance, NULL
+    mov         hMemOptLabel, eax
 
     ; memory scan option combobox
     invoke      CreateWindowEx, 0, ADDR comboClass, NULL,
@@ -303,32 +309,33 @@ WinMain PROC
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR startLabel,
                     TEXT_STYLE, 360, 350, 40, 30,
                     hMainWnd, 22, hInstance, NULL
+    mov         hStartLabel, eax
 
     ; stop label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR stopLabel,
                     TEXT_STYLE, 360, 390, 40, 30,
                     hMainWnd, 23, hInstance, NULL
+    mov         hStopLabel, eax
 
     ; start edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
                     EDIT_STYLE, 400, 350, 160, 30,             
                     hMainWnd, 24, hInstance, NULL
     mov         hStartEdit, eax
-    invoke      EnableWindow, hStartEdit, 0
 
     ; stop edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
                     EDIT_STYLE, 400, 390, 160, 30,             
                     hMainWnd, 25, hInstance, NULL
     mov         hStopEdit, eax
-    invoke      EnableWindow, hStopEdit, 0
 
     ; <<<<<<<<<<<<<<<<<<<< Displaying MainWindow >>>>>>>>>>>>>>>>>>>>>>>>>
     invoke      ShowWindow, hMainWnd, SW_SHOW
     invoke      UpdateWindow, hMainWnd
+    invoke      AdjWidgetState, 0
 
     ; <<<<<<<<<<<<<<<<<<<< Adjust Listbox Width >>>>>>>>>>>>>>>>>>>>>>>>>
-    invoke      SendMessage, hListBox, LB_SETCOLUMNWIDTH, 360, 0
+    ; invoke      SendMessage, hListBox, LB_SETCOLUMNWIDTH, 360, 0
 
     ; <<<<<<<<<<<<<<<<<<<< Message-handling loop >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -372,66 +379,39 @@ WinProc PROC,
         ror         ebx, 16         ; BX: HIWORD
 
         ; Processing different message types
-        .IF             bx == BN_CLICKED    ; button
-            .IF         ax == 2             ; quit current process
-                mov         state, 0
-                invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
-                invoke      EnumProc, hListBox
-                invoke      EnableWindow, hQuitBtn, 0
-                invoke      EnableWindow, hSelectBtn, 1
-                invoke      EnableWindow, hNewBtn, 0
-                invoke      EnableWindow, hNextBtn, 0
-                invoke      EnableWindow, hValEdit, 0
-                invoke      EnableWindow, hAddrEdit, 0
-                invoke      EnableWindow, hNewValEdit, 0
-                invoke      EnableWindow, hEditBtn, 0
-                invoke      SendMessage, hListBox, LB_SETCOLUMNWIDTH, 360, 0
-            .ENDIF
-        .ENDIF
-
-        .IF         state == 0          ; selecting process
-            .IF             bx == LBN_SELCHANGE ; listbox
+        .IF         ax == 2 && bx == BN_CLICKED            ; quit current process
+            mov         state, 0
+            invoke      AdjWidgetState, 0
+            invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
+            invoke      EnumProc, hListBox
+            ; invoke      SendMessage, hListBox, LB_SETCOLUMNWIDTH, 360, 0
+        .ELSEIF     state == 0           ; selecting process
+            .IF             bx == LBN_SELCHANGE            ; listbox
                 invoke      SendMessage, hListBox, LB_GETCURSEL, 0, 0
                 invoke      SendMessage, hListBox, LB_GETITEMDATA, eax, 0
                 invoke      FetchProc, eax, ADDR pid
-            .ELSEIF         bx == BN_CLICKED    ; button
-                .IF         ax == 3             ; select current process
-                    mov         state, 1
-                    invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
-                    invoke      EnableWindow, hQuitBtn, 1
-                    invoke      EnableWindow, hSelectBtn, 0
-                    invoke      EnableWindow, hNewBtn, 1
-                    invoke      EnableWindow, hValEdit, 1
-                    invoke      SendMessage, hListBox, LB_SETCOLUMNWIDTH, 180, 0
-                .ENDIF
+            .ELSEIF         ax == 3 && bx == BN_CLICKED    ; select current process
+                mov         state, 1
+                invoke      AdjWidgetState, 1
+                invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
+                ; invoke      SendMessage, hListBox, LB_SETCOLUMNWIDTH, 180, 0
             .ENDIF
-        .ELSEIF     state == 1           ; before first
-            .IF             bx == BN_CLICKED    ; button
-                .IF         ax == 5             ; new filtering
-                    mov         state, 2
-                    jmp         NewScan
-                .ENDIF
+        .ELSEIF     state == 1           ; process selected, before new
+            .IF             ax == 5 && bx == BN_CLICKED    ; create a new scan
+                mov         state, 2
+                invoke      AdjWidgetState, 2
             .ENDIF
-        .ELSEIF     state == 2           ; after first
-            .IF             bx == BN_CLICKED    ; button
-                .IF         ax == 5             ; new filtering
-                    jmp         NewScan
-                .ELSEIF     ax == 6             ; next filtering
-                    jmp         NextScan
-                .ENDIF
-            .ELSEIF         bx == LBN_SELCHANGE ; listbox
+        .ELSEIF     state == 2           ; ready for first scan
+            .IF             ax == 26 && bx == BN_CLICKED   ; first scan
                 mov         state, 3
-                jmp         SelectAddr
+                invoke      AdjWidgetState, 3
+                jmp         NewScan
             .ENDIF
-        .ELSEIF     state == 3           ; address selected
+        .ELSEIF     state == 3           ; after first scan
             .IF             bx == BN_CLICKED    ; button
                 .IF         ax == 5             ; new filtering
-                    mov         state, 2
-                    invoke      SetWindowText, hAddrEdit, NULL
                     jmp         NewScan
                 .ELSEIF     ax == 6             ; next filtering
-                    mov         state, 2
-                    invoke      SetWindowText, hAddrEdit, NULL
                     jmp         NextScan
                 .ELSEIF     ax == 14            ; edit
                     invoke      GetDlgItemInt, hMainWnd, 13, NULL, 0
@@ -489,5 +469,92 @@ WinProcExit:
     ret
 WinProc ENDP
 
-; END
-END                 WinMain
+
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+AdjWidgetState PROC,
+    newState:   DWORD
+; Adjust widget accessibility according to app state.
+; No return value.
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+    ; Process selection
+    invoke      EnableWindow, hQuitBtn, 0
+    invoke      EnableWindow, hSelectBtn, 0
+
+    ; Value related
+    invoke      EnableWindow, hFiltLabel, 0
+    invoke      EnableWindow, hScanTpLabel, 0
+    invoke      EnableWindow, hScanTpCmbox, 0
+    invoke      EnableWindow, hValLabel, 0
+    invoke      EnableWindow, hValEdit, 0
+
+    ; Scan buttons
+    invoke      EnableWindow, hNewBtn, 0
+    invoke      ShowWindow, hNewBtn, SW_SHOW
+    invoke      EnableWindow, hFirstBtn, 0
+    invoke      ShowWindow, hFirstBtn, SW_HIDE
+    invoke      EnableWindow, hNextBtn, 0
+
+    ; Configurations
+    invoke      EnableWindow, hValTpLabel, 0
+    invoke      EnableWindow, hValTpCmbox, 0
+    invoke      EnableWindow, hMemOptLabel, 0
+    invoke      EnableWindow, hMemOptCmbox, 0
+    invoke      EnableWindow, hStartLabel, 0
+    invoke      EnableWindow, hStartEdit, 0
+    invoke      EnableWindow, hStopLabel, 0
+    invoke      EnableWindow, hStopEdit, 0
+
+    ; Editing
+    invoke      EnableWindow, hEditLabel, 0
+    invoke      EnableWindow, hAddrLabel, 0
+    invoke      EnableWindow, hAddrEdit, 0
+    invoke      EnableWindow, hNewValLabel, 0
+    invoke      EnableWindow, hNewValEdit, 0
+    invoke      EnableWindow, hEditBtn, 0
+    
+    ; IF-conditions
+    .IF             newState == 0
+        invoke      EnableWindow, hSelectBtn, 1
+    .ELSEIF         newState == 1
+        invoke      EnableWindow, hQuitBtn, 1
+        invoke      EnableWindow, hNewBtn, 1
+    .ELSEIF         newState == 2
+        invoke      ShowWindow, hNewBtn, SW_HIDE
+        invoke      ShowWindow, hFirstBtn, SW_SHOW
+        invoke      EnableWindow, hQuitBtn, 1
+        invoke      EnableWindow, hFirstBtn, 1
+        invoke      EnableWindow, hFiltLabel, 1
+        invoke      EnableWindow, hScanTpLabel, 1
+        invoke      EnableWindow, hScanTpCmbox, 1
+        invoke      EnableWindow, hValLabel, 1
+        invoke      EnableWindow, hValEdit, 1
+        invoke      EnableWindow, hValTpLabel, 1
+        invoke      EnableWindow, hValTpCmbox, 1
+        invoke      EnableWindow, hMemOptLabel, 1
+        invoke      EnableWindow, hMemOptCmbox, 1
+        invoke      EnableWindow, hStartLabel, 1
+        invoke      EnableWindow, hStartEdit, 1
+        invoke      EnableWindow, hStopLabel, 1
+        invoke      EnableWindow, hStopEdit, 1
+    .ELSEIF         newState == 3
+        invoke      EnableWindow, hQuitBtn, 1
+        invoke      EnableWindow, hNewBtn, 1
+        invoke      EnableWindow, hNextBtn, 1
+        invoke      EnableWindow, hFiltLabel, 1
+        invoke      EnableWindow, hScanTpLabel, 1
+        invoke      EnableWindow, hScanTpCmbox, 1
+        invoke      EnableWindow, hValLabel, 1
+        invoke      EnableWindow, hValEdit, 1
+        invoke      EnableWindow, hEditLabel, 1
+        invoke      EnableWindow, hAddrLabel, 1
+        invoke      EnableWindow, hAddrEdit, 1
+        invoke      EnableWindow, hNewValLabel, 1
+        invoke      EnableWindow, hNewValEdit, 1
+        invoke      EnableWindow, hEditBtn, 1
+    .ENDIF
+    ret
+AdjWidgetState ENDP
+
+
+END
+; END                 WinMain
