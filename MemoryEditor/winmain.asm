@@ -66,6 +66,10 @@ editBtn         BYTE        "Edit", 0
 loadingLabel    BYTE        "LOADING ...", 0
 scanTpLabel     BYTE        "Scan Type", 0
 valTpLabel      BYTE        "Value Type", 0
+memOptLabel     BYTE        "Memory Scan Options", 0
+startLabel      BYTE        "Start", 0
+stopLabel       BYTE        "Stop", 0
+
 
 ; <<<<<<<<<<<<<<<<<<<< Options of Scan Type >>>>>>>>>>>>>>>>>>>>>>>>>
 scanTypeExact   BYTE        "Exact Value", 0
@@ -75,10 +79,9 @@ scanTypeBwt     BYTE        "Value between...", 0
 scanTypeUkwn    BYTE        "Unknown initial value", 0
 
 ; <<<<<<<<<<<<<<<<<<<< Options of Value Type >>>>>>>>>>>>>>>>>>>>>>>>>
-valTypeBin      BYTE        "Binary", 0
 valTypeByte     BYTE        "Byte", 0
-valTypeDByte    BYTE        "2 Bytes", 0
-valTypeQByte    BYTE        "4 Bytes", 0
+valTypeWord     BYTE        "2 Bytes", 0
+valTypeDWord    BYTE        "4 Bytes", 0
 
 ; <<<<<<<<<<<<<<<<<<<< Handles of Widgets >>>>>>>>>>>>>>>>>>>>>>>>>
 hMainWnd        DWORD       ?
@@ -101,6 +104,9 @@ hScanTpLabel    DWORD       ?
 hScanTpCmbox    DWORD       ?
 hValTpLabel     DWORD       ?
 hValTpCmbox     DWORD       ?
+hStartEdit      DWORD       ?
+hStopEdit       DWORD       ?
+hMemOptCmbox    DWORD       ?
 
 ; <<<<<<<<<<<<<<<<<<<< Main Logics >>>>>>>>>>>>>>>>>>>>>>>>>
 state           DWORD       0
@@ -143,7 +149,7 @@ WinMain PROC
     ; Returns a handle to the main window in EAX.
     invoke      CreateWindowEx, 0, ADDR windowClass, ADDR windowName, 
                     MAIN_WINDOW_STYLE, CW_USEDEFAULT, CW_USEDEFAULT, 
-                    600, 600, NULL, NULL, hInstance, NULL   ; Main Window WIDTH, HEIGHT
+                    600, 640, NULL, NULL, hInstance, NULL   ; Main Window WIDTH, HEIGHT
     mov         hMainWnd, eax
 
     ; If CreateWindowEx failed, display a message & exit.
@@ -154,7 +160,7 @@ WinMain PROC
     ; <<<<<<<<<<<<<<<<<<<< Creating widgets >>>>>>>>>>>>>>>>>>>>>>>>>
     ; main listbox
     invoke      CreateWindowEx, 0, ADDR listboxClass, NULL, 
-                    LISTBOX_STYLE, 20, 20, 330, 520,
+                    LISTBOX_STYLE, 20, 20, 330, 560,
                     hMainWnd, 1, hInstance, NULL
     mov         hListBox, eax
     invoke      EnumProc, hListBox
@@ -174,72 +180,72 @@ WinMain PROC
 
     ; filtering label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR filtLabel,
-                    TEXT_STYLE, 360, 200, 160, 20,             
+                    TEXT_STYLE, 360, 190, 160, 20,             
                     hMainWnd, 4, hInstance, NULL
     mov         hFiltLabel, eax
     
     ; new button
     invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR newBtn,
-                    BUTTON_STYLE, 360, 230, 80, 40,             
+                    BUTTON_STYLE, 360, 210, 80, 30,             
                     hMainWnd, 5, hInstance, NULL
     mov         hNewBtn, eax
     invoke      EnableWindow, hNewBtn, 0
     
     ; next button
     invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR nextBtn,
-                    BUTTON_STYLE, 480, 230, 80, 40,             
+                    BUTTON_STYLE, 480, 210, 80, 30,             
                     hMainWnd, 6, hInstance, NULL
     mov         hNextBtn, eax
     invoke      EnableWindow, hNextBtn, 0
 
     ; value label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR valLabel,
-                    TEXT_STYLE, 360, 290, 80, 40,             
+                    TEXT_STYLE, 360, 250, 80, 30,             
                     hMainWnd, 7, hInstance, NULL
     mov         hValLabel, eax
 
     ; value edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
-                    EDIT_STYLE, 440, 290, 120, 40,             
+                    EDIT_STYLE, 440, 250, 120, 30,             
                     hMainWnd, 8, hInstance, NULL
     mov         hValEdit, eax
     invoke      EnableWindow, hValEdit, 0
 
     ; edit label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR editLabel,
-                    TEXT_STYLE, 360, 340, 260, 40,             
+                    TEXT_STYLE, 360, 430, 260, 30,             
                     hMainWnd, 9, hInstance, NULL
     mov         hEditLabel, eax
 
     ; address label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR addrLabel,
-                    TEXT_STYLE, 360, 380, 60, 40,             
+                    TEXT_STYLE, 360, 460, 60, 30,             
                     hMainWnd, 10, hInstance, NULL
     mov         hAddrLabel, eax
 
     ; address edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
-                    EDIT_STYLE, 440, 380, 120, 40,             
+                    EDIT_STYLE, 440, 460, 120, 30,             
                     hMainWnd, 11, hInstance, NULL
     mov         hAddrEdit, eax
     invoke      EnableWindow, hAddrEdit, 0
 
     ; new value label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR newValLabel,
-                    TEXT_STYLE, 360, 440, 120, 40,             
+                    TEXT_STYLE, 360, 500, 120, 30,             
                     hMainWnd, 12, hInstance, NULL
     mov         hNewValLabel, eax
 
     ; new value edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
-                    EDIT_STYLE, 440, 440, 120, 40,             
+                    EDIT_STYLE, 440, 500, 120, 30,             
                     hMainWnd, 13, hInstance, NULL
     mov         hNewValEdit, eax
     invoke      EnableWindow, hNewValEdit, 0
 
     ; edit button
     invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR editBtn,
-                    BUTTON_STYLE, 360, 500, 200, 40,
+                    BUTTON_STYLE, 360, 540, 200, 40,
                     hMainWnd, 14, hInstance, NULL
     mov         hEditBtn, eax
     invoke      EnableWindow, hEditBtn, 0
@@ -259,26 +265,63 @@ WinMain PROC
 
     ; scantype combobox
     invoke      CreateWindowEx, 0, ADDR comboClass, NULL,
-                    COMBOBOX_STYLE, 440, 120, 120, 30,            
+                    COMBOBOX_STYLE, 440, 120, 120, 120,            
                     hMainWnd, 17, hInstance, NULL
     mov         hScanTpCmbox, eax
-    invoke      SendMessage, hScanTpCmbox, CB_ADDSTRING, 0, ADDR scanTypeExact
+    invoke      SendMessage, hScanTpCmbox, CB_ADDSTRING, NULL, ADDR scanTypeExact
+    invoke      SendMessage, hScanTpCmbox, CB_ADDSTRING, NULL, ADDR scanTypeBig
+    invoke      SendMessage, hScanTpCmbox, CB_ADDSTRING, NULL, ADDR scanTypeSmall
+    invoke      SendMessage, hScanTpCmbox, CB_ADDSTRING, NULL, ADDR scanTypeUkwn
 
-;scanTypeBig     BYTE        "Bigger than...", 0
-;scanTypeSmall   BYTE        "Smaller than...", 0
-;scanTypeBwt     BYTE        "Value between...", 0
-;scanTypeUkwn    BYTE        "Unknown initial value", 0
     ; valuetype label
-    ;invoke      CreateWindowEx, 0, ADDR textClass, ADDR valTpLabel,
-    ;                TEXT_STYLE, 360, 160, 120, 30,             
-    ;                hMainWnd, 18, hInstance, NULL
-    ;mov         hScanTpLabel, eax
+    invoke      CreateWindowEx, 0, ADDR textClass, ADDR valTpLabel,
+                    TEXT_STYLE, 360, 160, 80, 30,             
+                    hMainWnd, 18, hInstance, NULL
+    mov         hValTpLabel, eax
 
     ; valuetype combobox
-    ;invoke      CreateWindowEx, 0, ADDR comboClass, ADDR loadingLabel,
-    ;                COMBOBOX_STYLE, 360, 160, 120, 30,             
-    ;                hMainWnd, 17, hInstance, NULL
-    ;mov         hScanTpCmbox, eax
+    invoke      CreateWindowEx, 0, ADDR comboClass, NULL,
+                    COMBOBOX_STYLE, 440, 160, 120, 120,             
+                    hMainWnd, 19, hInstance, NULL
+    mov         hValTpCmbox, eax
+    invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeByte
+    invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeWord
+    invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeDWord
+
+    ; memory scan option label
+    invoke      CreateWindowEx, 0, ADDR textClass, ADDR memOptLabel,
+                    TEXT_STYLE, 360, 290, 150, 30,
+                    hMainWnd, 20, hInstance, NULL
+
+    ; memory scan option combobox
+    invoke      CreateWindowEx, 0, ADDR comboClass, NULL,
+                    COMBOBOX_STYLE + WS_VSCROLL, 360, 315, 200, 120,             
+                    hMainWnd, 21, hInstance, NULL
+    mov         hMemOptCmbox, eax
+
+    ; start label
+    invoke      CreateWindowEx, 0, ADDR textClass, ADDR startLabel,
+                    TEXT_STYLE, 360, 350, 40, 30,
+                    hMainWnd, 22, hInstance, NULL
+
+    ; stop label
+    invoke      CreateWindowEx, 0, ADDR textClass, ADDR stopLabel,
+                    TEXT_STYLE, 360, 390, 40, 30,
+                    hMainWnd, 23, hInstance, NULL
+
+    ; start edit
+    invoke      CreateWindowEx, 0, ADDR editClass, NULL,
+                    EDIT_STYLE, 400, 350, 160, 30,             
+                    hMainWnd, 24, hInstance, NULL
+    mov         hStartEdit, eax
+    invoke      EnableWindow, hStartEdit, 0
+
+    ; stop edit
+    invoke      CreateWindowEx, 0, ADDR editClass, NULL,
+                    EDIT_STYLE, 400, 390, 160, 30,             
+                    hMainWnd, 25, hInstance, NULL
+    mov         hStopEdit, eax
+    invoke      EnableWindow, hStopEdit, 0
 
     ; <<<<<<<<<<<<<<<<<<<< Displaying MainWindow >>>>>>>>>>>>>>>>>>>>>>>>>
     invoke      ShowWindow, hMainWnd, SW_SHOW
