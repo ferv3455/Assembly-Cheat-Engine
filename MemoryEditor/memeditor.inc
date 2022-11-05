@@ -7,12 +7,14 @@ INCLUDE         windows.inc
 INCLUDE         kernel32.inc 
 INCLUDE         user32.inc 
 INCLUDE         psapi.inc
+INCLUDE         gdi32.inc
 
 INCLUDELIB      msvcrt.lib
 INCLUDELIB      Irvine32.lib
 INCLUDELIB      kernel32.lib 
 INCLUDELIB      user32.lib 
 INCLUDELIB      psapi.lib
+INCLUDELIB      gdi32.lib
 
 ; Structs used in scanning addresses
 ScanValue STRUCT
@@ -35,6 +37,7 @@ ExitProcess     PROTO, dwExitCode:DWORD
 scanf           PROTO, C:PTR SBYTE, :VARARG
 printf          PROTO, C:PTR SBYTE, :VARARG
 sprintf         PROTO, C:VARARG
+sscanf          PROTO, C:VARARG
 
 ; process.asm
 EnumProc        PROTO, hListBox:DWORD
@@ -43,7 +46,7 @@ GetPidByTitle   PROTO, windowTitle:PTR BYTE, pid:PTR DWORD
 
 ; filter.asm
 FilterValue     PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue, scanMode:ScanMode
-FilterValueTwo  PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue
+FilterValueTwo  PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue, condition:DWORD
 FetchAddr       PROTO, index:DWORD, address:PTR DWORD
 MakeMessage     PROTO, dest:PTR BYTE, address:DWORD, value:DWORD, valSize:DWORD
 
@@ -54,6 +57,7 @@ Modify          PROTO, pid:DWORD, writeAddr:DWORD, writeData:DWORD, valSize:DWOR
 InputValue      PROTO, dest:PTR DWORD, vSize:DWORD
 
 ; winmain.asm
+SetChildFont    PROTO, hwnd:DWORD, lParam:DWORD
 AdjWidgetState  PROTO, newState:DWORD
 
 ; Type Constants
@@ -67,8 +71,8 @@ DEFAULT_MEMMIN  EQU         <0h>
 DEFAULT_MEMMAX  EQU         <0BFFFFFFFh>
 
 ; Scan Conditions
-COND_GT         EQU         <1>
-COND_GE         EQU         <2>
-COND_EQ         EQU         <3>
-COND_LE         EQU         <4>
-COND_LT         EQU         <5>
+COND_GT         EQU         <0>
+COND_GE         EQU         <1>
+COND_EQ         EQU         <2>
+COND_LE         EQU         <3>
+COND_LT         EQU         <4>

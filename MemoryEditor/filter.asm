@@ -6,14 +6,14 @@ INCLUDE         MACRO.mac
 .data
 ; <<<<<<<<<<<<<<<<<<<< PROC Filter >>>>>>>>>>>>>>>>>>>>>>>>>
 bufDWORD        DWORD       ?
-bufWORD         WORD        ?
-bufBYTE         BYTE        ?
+; bufWORD         WORD        ?
+; bufBYTE         BYTE        ?
 
 filterMsg       BYTE        "Use value %u to filter", 0ah, 0dh, 0
 filterAnsMsg    BYTE        "Found address: %08X", 0ah, 0dh, 0
 testMsg         BYTE        "val is %08X", 0ah, 0dh, 0
 msgBuffer       BYTE        24 DUP(0)
-lastsearch      DWORD       10240 DUP(?)
+lastsearch      DWORD       262144 DUP(?)
 totaladdr       DWORD       0
 errorFilterMsg  BYTE        "Failed to filter", 0ah, 0dh, 0
 newLineMsg      BYTE        0ah, 0dh, 0
@@ -23,9 +23,9 @@ filterTwoAnsMsg BYTE        "Found changed value's address: %08X", 0ah, 0dh, 0
 findDoneMsg     BYTE        "Find Done!", 0ah, 0dh, 0
 
 ; <<<<<<<<<<<<<<<<<<<< PROC MakeMessage >>>>>>>>>>>>>>>>>>>>>>>>>
-addrDwordMsg     BYTE        "%08X    %u", 0
-addrWordMsg      BYTE        "%08X    %hu", 0
-addrByteMsg      BYTE        "%08X    %hhu", 0
+addrDwordMsg     BYTE        "%08X            %u", 0
+addrWordMsg      BYTE        "%08X            %hu", 0
+addrByteMsg      BYTE        "%08X            %hhu", 0
 
 
 .code
@@ -105,103 +105,76 @@ PIECE:
     je          BLOCK
 
     .IF         scanVal.valSize == TYPE_DWORD
-        invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, SIZEOF bufDWORD, 0
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, TYPE_DWORD, 0
         test        eax, eax
         jz          accessFailed
-        mov         eax, scanVal.value
-        mov         edx, ScanMode.condition
-        .IF         edx==COND_GT
-        cmp         eax, bufDWORD
-        ja          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_LT
-        cmp         eax, bufDWORD
-        jb          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_EQ
-        cmp         eax, bufDWORD
-        je          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_GE
-        cmp         eax, bufDWORD
-        jae         SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_LE
-        cmp         eax, bufDWORD
-        jbe         SUCCESS_find
-        ; filter_core_cmp condition
+        mov         eax, bufDWORD
+        mov         edx, scanMode.condition
+        .IF         edx == COND_GT
+            cmp         eax, scanVal.value
+            ja          SUCCESS_find
+        .ELSEIF     edx == COND_LT
+            cmp         eax, scanVal.value
+            jb          SUCCESS_find
+        .ELSEIF     edx == COND_EQ
+            cmp         eax, scanVal.value
+            je          SUCCESS_find
+        .ELSEIF     edx == COND_GE
+            cmp         eax, scanVal.value
+            jae         SUCCESS_find
+        .ELSEIF     edx == COND_LE
+            cmp         eax, scanVal.value
+            jbe         SUCCESS_find
         .ENDIF
         add         edi, scanMode.step
         jmp         PIECE
 
     .ELSEIF     scanVal.valSize == TYPE_WORD
-        invoke      ReadProcessMemory, ebx, edi, OFFSET bufWORD, SIZEOF bufWORD, 0
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, TYPE_WORD, 0
         test        eax, eax
         jz          accessFailed
-        mov         ax, WORD PTR scanVal.value
-        mov         edx, ScanMode.condition
-        .IF         edx==COND_GT
-        cmp         ax, bufWORD
-        ja          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_LT
-        cmp         ax, bufWORD
-        jb          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_EQ
-        cmp         ax, bufWORD
-        je          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_GE
-        cmp         ax, bufWORD
-        jae         SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_LE
-        cmp         ax, bufWORD
-        jbe         SUCCESS_find
-        ; filter_core_cmp condition
+        mov         ax, WORD PTR bufDWORD
+        mov         edx, scanMode.condition
+        .IF         edx == COND_GT
+            cmp         ax, WORD PTR scanVal.value
+            ja          SUCCESS_find
+        .ELSEIF     edx == COND_LT
+            cmp         ax, WORD PTR scanVal.value
+            jb          SUCCESS_find
+        .ELSEIF     edx == COND_EQ
+            cmp         ax, WORD PTR scanVal.value
+            je          SUCCESS_find
+        .ELSEIF     edx == COND_GE
+            cmp         ax, WORD PTR scanVal.value
+            jae         SUCCESS_find
+        .ELSEIF     edx == COND_LE
+            cmp         ax, WORD PTR scanVal.value
+            jbe         SUCCESS_find
         .ENDIF
         add         edi, scanMode.step
         jmp         PIECE
 
     .ELSEIF     scanVal.valSize == TYPE_BYTE
-        invoke      ReadProcessMemory, ebx, edi, OFFSET bufBYTE, SIZEOF bufBYTE, 0
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufDWORD, TYPE_BYTE, 0
         test        eax, eax
         jz          accessFailed
-        mov         al, BYTE PTR scanVal.value
-        mov         edx, ScanMode.condition
-        .IF         edx==COND_GT
-        cmp         al, bufBYTE
-        ja          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_LT
-        cmp         al, bufBYTE
-        jb          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_EQ
-        cmp         al, bufBYTE
-        je          SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_GE
-        cmp         al, bufBYTE
-        jae         SUCCESS_find
-        ; filter_core_cmp condition
-        .ENDIF
-        .IF         edx==COND_LE
-        cmp         al, bufBYTE
-        jbe         SUCCESS_find
-        ; filter_core_cmp condition
+        mov         al, BYTE PTR bufDWORD
+        mov         edx, scanMode.condition
+        .IF         edx == COND_GT
+            cmp         al, BYTE PTR scanVal.value
+            ja          SUCCESS_find
+        .ELSEIF     edx == COND_LT
+            cmp         al, BYTE PTR scanVal.value
+            jb          SUCCESS_find
+        .ELSEIF     edx == COND_EQ
+            cmp         al, BYTE PTR scanVal.value
+            je          SUCCESS_find
+        .ELSEIF     edx == COND_GE
+            cmp         al, BYTE PTR scanVal.value
+            jae         SUCCESS_find
+        .ELSEIF     edx == COND_LE
+            cmp         al, BYTE PTR scanVal.value
+            jbe         SUCCESS_find
         .ENDIF
         add         edi, scanMode.step
         jmp         PIECE
@@ -219,7 +192,7 @@ SUCCESS_find:
     mov         [esi], eax
     inc         totaladdr
     add         esi, TYPE lastsearch
-    invoke      MakeMessage, OFFSET msgBuffer, ansAddr, scanVal.value, scanVal.valSize
+    invoke      MakeMessage, OFFSET msgBuffer, ansAddr, bufDWORD, scanVal.valSize
     mov         eax, gui
     test        eax, eax
     jnz         updateListBox
@@ -228,7 +201,7 @@ SUCCESS_find:
     jmp         SUCCESS_end
 updateListBox:
     mov         eax, totaladdr
-    cmp         eax, 256
+    cmp         eax, 1024
     ja          SUCCESS_end
     invoke      SendMessage, hListBox, LB_ADDSTRING, 0, ADDR msgBuffer
     invoke      SendMessage, hListBox, LB_SETITEMDATA, eax, totaladdr
@@ -252,13 +225,14 @@ FilterValue ENDP
 FilterValueTwo PROC,
     pid:        DWORD,                 ; which process
     hListBox:   DWORD,                 ; the handle of Listbox if GUI is used
-    scanVal:    ScanValue              ; use this value to select addresses
+    scanVal:    ScanValue,             ; use this value to select addresses
+    condition:  DWORD                  ; signify >, >=, =, <=, <
 ; Select addresses according to the value from a given set.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
-    LOCAL       tmpValDWORD:    DWORD
-    LOCAL       tmpValWORD:     WORD
-    LOCAL       tmpValBYTE:     BYTE
+    ; LOCAL       tmpValDWORD:    DWORD
+    ; LOCAL       tmpValWORD:     WORD
+    ; LOCAL       tmpValBYTE:     BYTE
     LOCAL       handle:         DWORD
     LOCAL       count:          DWORD
     LOCAL       newCount:       DWORD
@@ -289,23 +263,68 @@ findLoop:
     mov         ebx, [edi]
     
     .IF          scanVal.valSize == TYPE_DWORD
-        invoke      ReadProcessMemory, handle, ebx, ADDR tmpValDWORD, TYPE_DWORD, 0
+        invoke      ReadProcessMemory, handle, ebx, OFFSET bufDWORD, TYPE_DWORD, 0
         add         edi, TYPE lastsearch
-        mov         eax, tmpValDWORD
-        cmp         eax, scanVal.value
-        je          findSuccess
+        mov         eax, bufDWORD
+        mov         edx, condition
+        .IF         edx == COND_GT
+            cmp         eax, scanVal.value
+            ja          findSuccess
+        .ELSEIF     edx == COND_LT
+            cmp         eax, scanVal.value
+            jb          findSuccess
+        .ELSEIF     edx == COND_EQ
+            cmp         eax, scanVal.value
+            je          findSuccess
+        .ELSEIF     edx == COND_GE
+            cmp         eax, scanVal.value
+            jae         findSuccess
+        .ELSEIF     edx == COND_LE
+            cmp         eax, scanVal.value
+            jbe         findSuccess
+        .ENDIF
     .ELSEIF      scanVal.valSize == TYPE_WORD
-        invoke      ReadProcessMemory, handle, ebx, ADDR tmpValWORD, TYPE_WORD, 0
+        invoke      ReadProcessMemory, handle, ebx, OFFSET bufDWORD, TYPE_WORD, 0
         add         edi, TYPE lastsearch
-        mov         ax, tmpValWORD
-        cmp         ax, WORD PTR scanVal.value
-        je          findSuccess
+        mov         ax, WORD PTR bufDWORD
+        mov         edx, condition
+        .IF         edx == COND_GT
+            cmp         ax, WORD PTR scanVal.value
+            ja          findSuccess
+        .ELSEIF     edx == COND_LT
+            cmp         ax, WORD PTR scanVal.value
+            jb          findSuccess
+        .ELSEIF     edx == COND_EQ
+            cmp         ax, WORD PTR scanVal.value
+            je          findSuccess
+        .ELSEIF     edx == COND_GE
+            cmp         ax, WORD PTR scanVal.value
+            jae         findSuccess
+        .ELSEIF     edx == COND_LE
+            cmp         ax, WORD PTR scanVal.value
+            jbe         findSuccess
+        .ENDIF
     .ELSEIF      scanVal.valSize == TYPE_BYTE
-        invoke      ReadProcessMemory, handle, ebx, ADDR tmpValBYTE, TYPE_BYTE, 0
+        invoke      ReadProcessMemory, handle, ebx, OFFSET bufDWORD, TYPE_BYTE, 0
         add         edi, TYPE lastsearch
-        mov         al, tmpValBYTE
-        cmp         al, BYTE PTR scanVal.value
-        je          findSuccess
+        mov         al, BYTE PTR bufDWORD
+        mov         edx, condition
+        .IF         edx == COND_GT
+            cmp         al, BYTE PTR scanVal.value
+            ja          findSuccess
+        .ELSEIF     edx == COND_LT
+            cmp         al, BYTE PTR scanVal.value
+            jb          findSuccess
+        .ELSEIF     edx == COND_EQ
+            cmp         al, BYTE PTR scanVal.value
+            je          findSuccess
+        .ELSEIF     edx == COND_GE
+            cmp         al, BYTE PTR scanVal.value
+            jae         findSuccess
+        .ELSEIF     edx == COND_LE
+            cmp         al, BYTE PTR scanVal.value
+            jbe         findSuccess
+        .ENDIF
     .ENDIF
 
     jmp         findLoop
@@ -313,7 +332,7 @@ findLoop:
 findSuccess:
     mov         [esi], ebx
     add         esi, TYPE lastsearch
-    invoke      MakeMessage, OFFSET msgBuffer, ebx, scanVal.value, scanVal.valSize
+    invoke      MakeMessage, OFFSET msgBuffer, ebx, bufDWORD, scanVal.valSize
     inc         newCount
     mov         eax, gui
     test        eax, eax

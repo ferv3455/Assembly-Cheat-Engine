@@ -71,7 +71,7 @@ Filter2:
     invoke      InputValue, OFFSET scanVal.value, scanVal.valSize
 
     ; Filter, print out and save certain addresses
-    invoke      FilterValueTwo, pid, 0, scanVal
+    invoke      FilterValueTwo, pid, 0, scanVal, scanMode.condition
     jmp         MainLoop
 
 Edit:

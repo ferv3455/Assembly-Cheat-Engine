@@ -49,4 +49,12 @@
       <Filter>资源文件</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\Thinkpad E480\Desktop\icon.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="C:\Users\Thinkpad E480\Desktop\icon.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
