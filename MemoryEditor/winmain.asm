@@ -124,6 +124,7 @@ writeData       DWORD       ?
 addrMsg         BYTE        "%08X", 0
 buffer          BYTE        16 DUP(0)
 successMsg      BYTE        "Successfully rewrite memory.", 0
+valTypes        DWORD       1, 2, 4
 
 ; <<<<<<<<<<<<<<<<<<<< Other data format >>>>>>>>>>>>>>>>>>>>>>>>>
 msg             MSGStruct   <>
@@ -292,6 +293,7 @@ WinMain PROC
     invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeByte
     invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeWord
     invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeDWord
+    invoke      SendMessage, hValTpCmbox, CB_SETCURSEL, 2, NULL
 
     ; memory scan option label
     invoke      CreateWindowEx, 0, ADDR textClass, ADDR memOptLabel,
@@ -432,16 +434,22 @@ WinProc PROC,
     jmp             WinProcExit
 
 NewScan:
+    ; Begin
     invoke          ShowWindow, hLoadingLabel, SW_SHOW
     invoke          UpdateWindow, hLoadingLabel
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
+
+    ; Get value
     invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
     mov             scanVal.value, eax
+    invoke          SendMessage, hValTpCmbox, CB_GETCURSEL, 0, 0
+    mov             eax, valTypes[eax * TYPE valTypes]
+    mov             scanVal.valSize, eax
+
+    ; First scan
     invoke          FilterValue, pid, hListBox, scanVal, scanMode
-    invoke          EnableWindow, hNextBtn, 1
-    invoke          EnableWindow, hAddrEdit, 1
-    invoke          EnableWindow, hNewValEdit, 1
-    invoke          EnableWindow, hEditBtn, 1
+
+    ; End
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
     jmp             WinProcExit
