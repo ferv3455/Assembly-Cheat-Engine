@@ -50,9 +50,6 @@ FilterValue PROC,
     LOCAL       ebxStore:       DWORD
     LOCAL       gui:            DWORD
 
-    ; let condition be a const
-    condition   EQU     ScanMode.condition
-
     ; check whether GUI is used
     mov         gui, 0
     mov         eax, hListBox
@@ -112,10 +109,32 @@ PIECE:
         test        eax, eax
         jz          accessFailed
         mov         eax, scanVal.value
+        mov         edx, ScanMode.condition
+        .IF         edx==COND_GT
         cmp         eax, bufDWORD
-        ; TODO
+        ja          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_LT
+        cmp         eax, bufDWORD
+        jb          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_EQ
+        cmp         eax, bufDWORD
         je          SUCCESS_find
         ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_GE
+        cmp         eax, bufDWORD
+        jae         SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_LE
+        cmp         eax, bufDWORD
+        jbe         SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -124,8 +143,32 @@ PIECE:
         test        eax, eax
         jz          accessFailed
         mov         ax, WORD PTR scanVal.value
+        mov         edx, ScanMode.condition
+        .IF         edx==COND_GT
         cmp         ax, bufWORD
-        filter_core_cmp condition
+        ja          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_LT
+        cmp         ax, bufWORD
+        jb          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_EQ
+        cmp         ax, bufWORD
+        je          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_GE
+        cmp         ax, bufWORD
+        jae         SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_LE
+        cmp         ax, bufWORD
+        jbe         SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -134,8 +177,32 @@ PIECE:
         test        eax, eax
         jz          accessFailed
         mov         al, BYTE PTR scanVal.value
+        mov         edx, ScanMode.condition
+        .IF         edx==COND_GT
         cmp         al, bufBYTE
-        filter_core_cmp condition
+        ja          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_LT
+        cmp         al, bufBYTE
+        jb          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_EQ
+        cmp         al, bufBYTE
+        je          SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_GE
+        cmp         al, bufBYTE
+        jae         SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
+        .IF         edx==COND_LE
+        cmp         al, bufBYTE
+        jbe         SUCCESS_find
+        ; filter_core_cmp condition
+        .ENDIF
         add         edi, scanMode.step
         jmp         PIECE
 
