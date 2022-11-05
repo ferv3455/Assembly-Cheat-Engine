@@ -1,7 +1,6 @@
 ; FilterValue
 
 INCLUDE         memeditor.inc
-INCLUDE         MACRO.mac
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< PROC Filter >>>>>>>>>>>>>>>>>>>>>>>>>

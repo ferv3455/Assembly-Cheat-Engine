@@ -157,7 +157,6 @@
     <MASM Include="winmain.asm" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="MACRO.mac" />
     <None Include="memeditor.inc" />
   </ItemGroup>
   <ItemGroup>
