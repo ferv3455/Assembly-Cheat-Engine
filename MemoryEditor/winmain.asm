@@ -82,8 +82,11 @@ scanTypeSmallEq BYTE        "Not greater than", 0
 
 ; <<<<<<<<<<<<<<<<<<<< Options of Value Type >>>>>>>>>>>>>>>>>>>>>>>>>
 valTypeByte     BYTE        "Byte", 0
-valTypeWord     BYTE        "2 Bytes", 0
-valTypeDWord    BYTE        "4 Bytes", 0
+valTypeWord     BYTE        "2 Bytes (Word)", 0
+valTypeDWord    BYTE        "4 Bytes (DWord)", 0
+valTypeQWord    BYTE        "8 Bytes (QWord)", 0
+valTypeFloat    BYTE        "32-bit Float", 0
+valTypeDouble   BYTE        "64-bit Double", 0
 
 ; <<<<<<<<<<<<<<<<<<<< Options of Address Step >>>>>>>>>>>>>>>>>>>>>>>>>
 stepFast        BYTE        "Fast Scan", 0
@@ -132,12 +135,13 @@ pid             DWORD       ?
 scanVal         ScanValue   <0, 4>
 scanMode        ScanMode    <4, COND_EQ, DEFAULT_MEMMIN, DEFAULT_MEMMAX>
 writeAddr       DWORD       ?
-writeData       DWORD       ?
+writeData       QWORD       ?
 addrMsg         BYTE        "%08X", 0
 hexMsg          BYTE        "%x", 0
+longMsg         BYTE        "%llu", 0
 buffer          BYTE        16 DUP(0)
 successMsg      BYTE        "Successfully rewrite memory.", 0
-valTypes        DWORD       TYPE_BYTE, TYPE_WORD, TYPE_DWORD
+valTypes        DWORD       TYPE_BYTE, TYPE_WORD, TYPE_DWORD, TYPE_QWORD, TYPE_REAL4, TYPE_REAL8
 
 ; <<<<<<<<<<<<<<<<<<<< Other data format >>>>>>>>>>>>>>>>>>>>>>>>>
 msg             MSGStruct   <>
@@ -321,6 +325,9 @@ WinMain PROC
     invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeByte
     invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeWord
     invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeDWord
+    invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeQWord
+    invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeFloat
+    invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeDouble
     invoke      SendMessage, hValTpCmbox, CB_SETCURSEL, 2, NULL
 
     ; memory scan option label
@@ -474,8 +481,8 @@ NewScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
 
     ; Get value
-    invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
-    mov             scanVal.value, eax
+    invoke          GetDlgItemText, hMainWnd, 8, OFFSET buffer, LENGTHOF buffer
+    invoke          sscanf, OFFSET buffer, OFFSET longMsg, OFFSET scanVal.value
     invoke          SendMessage, hValTpCmbox, CB_GETCURSEL, 0, 0
     mov             eax, valTypes[eax * TYPE valTypes]
     mov             scanVal.valSize, eax
@@ -513,8 +520,8 @@ NextScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
 
     ; Get value
-    invoke          GetDlgItemInt, hMainWnd, 8, NULL, 0
-    mov             scanVal.value, eax
+    invoke          GetDlgItemText, hMainWnd, 8, OFFSET buffer, LENGTHOF buffer
+    invoke          sscanf, OFFSET buffer, OFFSET longMsg, OFFSET scanVal.value
     invoke          SendMessage, hValTpCmbox, CB_GETCURSEL, 0, 0
     mov             eax, valTypes[eax * TYPE valTypes]
     mov             scanVal.valSize, eax
@@ -542,8 +549,8 @@ SelectAddr:
 ModifyAddr:
     invoke          GetDlgItemText, hMainWnd, 11, OFFSET buffer, LENGTHOF buffer
     invoke          sscanf, OFFSET buffer, OFFSET hexMsg, OFFSET writeAddr
-    invoke          GetDlgItemInt, hMainWnd, 13, NULL, 0
-    mov             writeData, eax
+    invoke          GetDlgItemText, hMainWnd, 13, OFFSET buffer, LENGTHOF buffer
+    invoke          sscanf, OFFSET buffer, OFFSET longMsg, OFFSET writeData
     invoke          Modify, pid, writeAddr, writeData, scanVal.valSize
     invoke          MessageBox, hMainWnd, ADDR successMsg, ADDR windowName, MB_OK
     jmp             WinProcExit

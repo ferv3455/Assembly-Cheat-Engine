@@ -50,7 +50,7 @@ END
 // PNG
 //
 
-IDB_PNG1                PNG                     "C:\\Users\\Thinkpad E480\\Desktop\\icon.png"
+IDB_PNG1                PNG                     "icons/icon.png"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ IDB_PNG1                PNG                     "C:\\Users\\Thinkpad E480\\Deskt
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON                    "C:\\Users\\Thinkpad E480\\Desktop\\icon.ico"
+IDI_ICON1               ICON                    "icons/icon.ico"
 
 #endif    // 中文(简体，中国) resources
 /////////////////////////////////////////////////////////////////////////////

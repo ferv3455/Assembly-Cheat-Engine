@@ -18,7 +18,7 @@ INCLUDELIB      gdi32.lib
 
 ; Structs used in scanning addresses
 ScanValue STRUCT
-    value       DWORD       ?           ; use this value to select addresses
+    value       QWORD       ?           ; use this value to select addresses
     valSize     DWORD       ?           ; the type of the value to find
 ScanValue ENDS
 
@@ -48,13 +48,13 @@ GetPidByTitle   PROTO, windowTitle:PTR BYTE, pid:PTR DWORD
 FilterValue     PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue, scanMode:ScanMode
 FilterValueTwo  PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue, condition:DWORD
 FetchAddr       PROTO, index:DWORD, address:PTR DWORD
-MakeMessage     PROTO, dest:PTR BYTE, address:DWORD, value:DWORD, valSize:DWORD
+MakeMessage     PROTO, dest:PTR BYTE, address:DWORD, value:QWORD, valSize:DWORD
 
 ; memedit.asm
-Modify          PROTO, pid:DWORD, writeAddr:DWORD, writeData:DWORD, valSize:DWORD
+Modify          PROTO, pid:DWORD, writeAddr:DWORD, writeData:QWORD, valSize:DWORD
 
 ; main.asm
-InputValue      PROTO, dest:PTR DWORD, vSize:DWORD
+InputValue      PROTO, dest:PTR QWORD, vSize:DWORD
 
 ; winmain.asm
 SetChildFont    PROTO, hwnd:DWORD, lParam:DWORD
@@ -65,6 +65,8 @@ TYPE_QWORD      EQU         <8>
 TYPE_DWORD      EQU         <4>
 TYPE_WORD       EQU         <2>
 TYPE_BYTE       EQU         <1>
+TYPE_REAL4      EQU         <32>
+TYPE_REAL8      EQU         <64>
 
 ; Range Constants
 DEFAULT_MEMMIN  EQU         <0h>

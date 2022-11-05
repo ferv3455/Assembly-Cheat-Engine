@@ -5,6 +5,7 @@ INCLUDE         memeditor.inc
 ; <<<<<<<<<<<<<<<<<<<< PROC Main >>>>>>>>>>>>>>>>>>>>>>>>>
 .data
 inputNumMsg     BYTE        "%u", 0
+inputLongMsg    BYTE        "%llu", 0
 inputHexMsg     BYTE        "%x", 0
 pidPromptMsg    BYTE        "Enter the PID of the program: ", 0
 filterPromptMsg BYTE        "Enter the value: ", 0
@@ -21,7 +22,7 @@ scanMode        ScanMode    <4, COND_EQ, DEFAULT_MEMMIN, DEFAULT_MEMMAX>
 command         DWORD       ?
 pid             DWORD       ?
 writeAddr       DWORD       ?
-writeData       DWORD       ?
+writeData       QWORD       ?
 
 ; <<<<<<<<<<<<<<<<<<<< PROC InputValue >>>>>>>>>>>>>>>>>>>>>>>>>
 .data
@@ -104,12 +105,14 @@ main ENDP
 
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
 InputValue PROC,
-    dest:       PTR DWORD,      ; Destination address (always in the first byte)
+    dest:       PTR QWORD,      ; Destination address (always in the first byte)
     vSize:      DWORD           ; Size of data
 ; Use scanf to get different type of inputs. Save them in the given address.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
-    .IF         vSize == TYPE_DWORD
+    .IF         vSize == TYPE_QWORD
+        invoke      scanf, OFFSET inputQwordMsg, dest
+    .ELSEIF     vSize == TYPE_DWORD
         invoke      scanf, OFFSET inputDwordMsg, dest
     .ELSEIF     vSize == TYPE_WORD
         invoke      scanf, OFFSET inputWordMsg, dest

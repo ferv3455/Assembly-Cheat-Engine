@@ -12,7 +12,7 @@ modifyErrorMsg  BYTE        "Failed to open the process", 0ah, 0dh, 0
 Modify PROC,
     pid:        DWORD,                 ; process PID
     writeAddr:  DWORD,                 ; the address to modify
-    writeData:  DWORD,                 ; new number
+    writeData:  QWORD,                 ; new number
     valSize:    DWORD                  ; the type of the value to find
 ; Modify a value in the certain address.
 ; No return value.
