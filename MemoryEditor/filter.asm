@@ -292,6 +292,8 @@ PIECE:
         jmp         PIECE
 
     .ENDIF
+    add         edi, scanMode.step
+    jmp         PIECE
     ret
 
 SUCCESS_find:

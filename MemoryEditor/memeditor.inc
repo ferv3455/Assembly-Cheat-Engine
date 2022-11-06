@@ -72,7 +72,7 @@ TYPE_REAL8      EQU         <64>
 
 ; Range Constants
 DEFAULT_MEMMIN  EQU         <0h>
-DEFAULT_MEMMAX  EQU         <0BFFFFFFFh>
+DEFAULT_MEMMAX  EQU         <07FFFFFFFh>
 
 ; Scan Conditions
 COND_GT         EQU         <0>
