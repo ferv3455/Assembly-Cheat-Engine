@@ -65,11 +65,11 @@ addrLabel       BYTE        "Address: ", 0
 newValLabel     BYTE        "New Value: ", 0
 editBtn         BYTE        "Edit", 0
 loadingLabel    BYTE        "LOADING ...", 0
-scanTpLabel     BYTE        "Scan Type", 0
-valTpLabel      BYTE        "Value Type", 0
+scanTpLabel     BYTE        "Condition: ", 0
+valTpLabel      BYTE        "Value Type: ", 0
 memOptLabel     BYTE        "Memory Scan Options:", 0
-startLabel      BYTE        "Start", 0
-stopLabel       BYTE        "Stop", 0
+startLabel      BYTE        "Start: ", 0
+stopLabel       BYTE        "Stop: ", 0
 
 
 ; <<<<<<<<<<<<<<<<<<<< Options of Scan Type >>>>>>>>>>>>>>>>>>>>>>>>>
