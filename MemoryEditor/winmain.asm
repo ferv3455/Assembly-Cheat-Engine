@@ -41,7 +41,7 @@ COMBOBOX_STYLE = WS_CHILD+WS_VISIBLE+CBS_DROPDOWNLIST+CBS_HASSTRINGS
 errorTitle      BYTE        "Error", 0
 noProcessText   BYTE        "No process is selected!", 0
 enumFailText    BYTE        "Process enumeration failed!", 0
-scanFailText    BYTE        "Scanning failed!", 0
+scanFailText    BYTE        "No valid addresses found!", 0
 modifyFailText  BYTE        "Editing failed!", 0
 successMsg      BYTE        "Successfully rewrite memory.", 0
 
@@ -633,10 +633,10 @@ AdjWidgetState PROC,
     invoke      EnableWindow, hValEdit, 0
 
     ; Scan buttons
-    invoke      EnableWindow, hNewBtn, 0
-    invoke      ShowWindow, hNewBtn, SW_SHOW
     invoke      EnableWindow, hFirstBtn, 0
     invoke      ShowWindow, hFirstBtn, SW_HIDE
+    invoke      EnableWindow, hNewBtn, 0
+    invoke      ShowWindow, hNewBtn, SW_SHOW
     invoke      EnableWindow, hNextBtn, 0
 
     ; Configurations
