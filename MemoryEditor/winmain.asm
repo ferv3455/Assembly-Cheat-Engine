@@ -539,7 +539,7 @@ NewScan:
     ; First scan
     invoke          FilterValue, pid, hListBox, scanVal, scanMode
     test            eax, eax
-    jnz             ScanFailed
+    jz              ScanFailed
 
     ; End
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
@@ -565,7 +565,7 @@ NextScan:
     ; Next scan
     invoke          FilterValueTwo, pid, hListBox, scanVal, scanMode.condition
     test            eax, eax
-    jnz             ScanFailed
+    jz              ScanFailed
 
     ; End
     invoke          ShowWindow, hLoadingLabel, SW_HIDE

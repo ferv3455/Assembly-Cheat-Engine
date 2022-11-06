@@ -40,7 +40,7 @@ FilterValue PROC,
     scanVal:    ScanValue,             ; use this value to select addresses
     scanMode:   ScanMode               ; specification in scanning
 ; Filter out addresses according to the value.
-; Return value: eax == 1 iff error.
+; Return value: eax == 0 iff error.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
     ; local variables used in iteration
     LOCAL       hMod[100]:      DWORD
@@ -336,7 +336,7 @@ SUCCESS_end:
     jmp         PIECE
     ret
 fail_RET:
-    mov         eax, 0
+    mov         eax, totaladdr
     ret
 accessFailed:
     add         edi, scanMode.step
@@ -344,7 +344,7 @@ accessFailed:
     ret
 filterProcReadFailed:
     invoke      printf, OFFSET errorFilterMsg
-    mov         eax, 1
+    mov         eax, 0
     ret
 FilterValue ENDP
 
@@ -587,11 +587,10 @@ findDone:
     ; invoke      printf, OFFSET findDoneMsg
     mov         eax, newCount
     mov         totaladdr, eax
-    mov         eax, 0
     ret
 filterProcReadFailed:
     invoke      printf, OFFSET errorFilterMsg
-    mov         eax, 1
+    mov         eax, 0
     ret
 FilterValueTwo ENDP
 
