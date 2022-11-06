@@ -633,12 +633,8 @@ MakeMessage PROC,
         ; finit
         fld         REAL4 PTR value
         fstp        tmp
-        invoke      printf, OFFSET float2Msg, tmp
-        invoke      printf, OFFSET filterMsg, value
         invoke      sprintf, dest, OFFSET addrDoubleMsg, address, tmp
     .ELSEIF     valSize == TYPE_REAL8
-        invoke      printf, OFFSET float2Msg, REAL8 PTR value
-        invoke      printf, OFFSET filterMsg, value
         invoke      sprintf, dest, OFFSET addrDoubleMsg, address, REAL8 PTR value
     .ENDIF
     ret

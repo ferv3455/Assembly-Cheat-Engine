@@ -17,6 +17,11 @@ Modify PROC,
 ; Modify a value in the certain address.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+    .IF         valSize == 32
+        mov         valSize, 4
+    .ELSEIF     valSize == 64
+        mov         valSize, 8
+    .ENDIF
 
     invoke      OpenProcess, PROCESS_ALL_ACCESS, 0, pid                         ; open the process (according to pid)
     test        eax, eax                                                        ; check whether the process is successfully opened (use bitwise AND)
