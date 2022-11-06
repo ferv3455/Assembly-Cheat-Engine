@@ -15,7 +15,7 @@ Modify PROC,
     writeData:  QWORD,                 ; new number
     valSize:    DWORD                  ; the type of the value to find
 ; Modify a value in the certain address.
-; No return value.
+; Return value: eax == 1 iff error.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
     .IF         valSize == 32
         mov         valSize, 4
@@ -25,14 +25,20 @@ Modify PROC,
 
     invoke      OpenProcess, PROCESS_ALL_ACCESS, 0, pid                         ; open the process (according to pid)
     test        eax, eax                                                        ; check whether the process is successfully opened (use bitwise AND)
-    jz          procOpenFailed                                                  ; if not successful, jump
+    jz          modifyFailed                                                    ; if not successful, jump
     mov         ebx, eax                                                        ; save handle
     invoke      ReadProcessMemory, ebx, writeAddr, ADDR recvData, valSize, 0    ; save the original data
+    test        eax, eax
+    jz          modifyFailed                                                    ; if not successful, jump
     invoke      WriteProcessMemory, ebx, writeAddr, ADDR writeData, valSize, 0  ; edit memory
+    test        eax, eax
+    jz          modifyFailed                                                    ; if not successful, jump
     ; invoke      printf, OFFSET succMsg, recvData, writeData                   ; successful
+    mov         eax, 0
     ret
-procOpenFailed:
+modifyFailed:
     invoke      printf, OFFSET modifyErrorMsg
+    mov         eax, 1
     ret
 Modify ENDP
 

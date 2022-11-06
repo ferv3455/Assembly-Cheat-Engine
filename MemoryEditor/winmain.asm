@@ -38,10 +38,12 @@ COMBOBOX_STYLE = WS_CHILD+WS_VISIBLE+CBS_DROPDOWNLIST+CBS_HASSTRINGS
 
 .data
 ; <<<<<<<<<<<<<<<<<<<< Popup Messages >>>>>>>>>>>>>>>>>>>>>>>>>
-popupTitle      BYTE        "Popup Window", 0
-buttonText      BYTE        "This window was activated by a Button message", 0
-editText        BYTE        "This window was activated by a Edit Control message", 0
-listboxFormat   BYTE        "This window was activated by Listbox item %d", 0
+errorTitle      BYTE        "Error", 0
+noProcessText   BYTE        "No process is selected!", 0
+enumFailText    BYTE        "Process enumeration failed!", 0
+scanFailText    BYTE        "Scanning failed!", 0
+modifyFailText  BYTE        "Editing failed!", 0
+successMsg      BYTE        "Successfully rewrite memory.", 0
 
 ; <<<<<<<<<<<<<<<<<<<< Classes of Widgets >>>>>>>>>>>>>>>>>>>>>>>>>
 windowClass     BYTE        "ASMWin", 0
@@ -130,7 +132,7 @@ hStopLabel      DWORD       ?
 
 ; <<<<<<<<<<<<<<<<<<<< Main Logics >>>>>>>>>>>>>>>>>>>>>>>>>
 state           DWORD       0
-pid             DWORD       ?
+pid             DWORD       0
 scanVal         ScanValue   <0, 4>
 scanMode        ScanMode    <4, COND_EQ, DEFAULT_MEMMIN, DEFAULT_MEMMAX>
 writeAddr       DWORD       ?
@@ -144,7 +146,6 @@ byteMsg         BYTE        "%hhu", 0
 floatMsg        BYTE        "%f", 0
 doubleMsg       BYTE        "%lf", 0
 buffer          BYTE        16 DUP(0)
-successMsg      BYTE        "Successfully rewrite memory.", 0
 valTypes        DWORD       TYPE_BYTE, TYPE_WORD, TYPE_DWORD, TYPE_QWORD, TYPE_REAL4, TYPE_REAL8
 
 ; <<<<<<<<<<<<<<<<<<<< Other data format >>>>>>>>>>>>>>>>>>>>>>>>>
@@ -205,6 +206,10 @@ WinMain PROC
                     hMainWnd, 1, hInstance, NULL
     mov         hListBox, eax
     invoke      EnumProc, hListBox
+    test        eax, eax
+    jz          EnumSuccess
+    invoke      MessageBox, hMainWnd, ADDR enumFailText, ADDR errorTitle, MB_OK
+EnumSuccess:
 
     ; quit button
     invoke      CreateWindowEx, 0, ADDR buttonClass, ADDR quitBtn,
@@ -431,31 +436,49 @@ WinProc PROC,
 
         ; Processing different message types
         .IF         ax == 2 && bx == BN_CLICKED            ; quit current process
+            mov         pid, 0
             mov         state, 0
             invoke      AdjWidgetState, 0
             invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
             invoke      EnumProc, hListBox
+            test        eax, eax
+            jz          EnumSuccess
+            invoke      MessageBox, hMainWnd, ADDR enumFailText, 
+                            ADDR errorTitle, MB_OK
+            jmp         WinProcExit
+        EnumSuccess:
+
         .ELSEIF     state == 0           ; selecting process
             .IF             bx == LBN_SELCHANGE            ; listbox
                 invoke      SendMessage, hListBox, LB_GETCURSEL, 0, 0
                 invoke      SendMessage, hListBox, LB_GETITEMDATA, eax, 0
                 invoke      FetchProc, eax, ADDR pid
             .ELSEIF         ax == 3 && bx == BN_CLICKED    ; select current process
+                mov         edx, pid
+                test        edx, edx
+                jnz         ProcessSelected
+                invoke      MessageBox, hMainWnd, ADDR noProcessText,
+	                            ADDR errorTitle, MB_OK
+                jmp         WinProcExit
+            ProcessSelected:
                 mov         state, 1
                 invoke      AdjWidgetState, 1
                 invoke      SendMessage, hListBox, LB_RESETCONTENT, 0, 0
             .ENDIF
+
         .ELSEIF     state == 1           ; process selected, before new
             .IF             ax == 5 && bx == BN_CLICKED    ; create a new scan
                 mov         state, 2
                 invoke      AdjWidgetState, 2
             .ENDIF
+
         .ELSEIF     state == 2           ; ready for first scan
             .IF             ax == 26 && bx == BN_CLICKED   ; first scan
                 mov         state, 3
                 invoke      AdjWidgetState, 3
                 jmp         NewScan
             .ENDIF
+
         .ELSEIF     state == 3           ; after first scan
             .IF             bx == BN_CLICKED    ; button
                 .IF         ax == 5             ; new filtering
@@ -469,6 +492,7 @@ WinProc PROC,
             .ELSEIF         bx == LBN_SELCHANGE ; listbox
                 jmp         SelectAddr
             .ENDIF
+            
         .ENDIF
         jmp         WinProcExit
 
@@ -514,6 +538,8 @@ NewScan:
 
     ; First scan
     invoke          FilterValue, pid, hListBox, scanVal, scanMode
+    test            eax, eax
+    jnz             ScanFailed
 
     ; End
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
@@ -538,10 +564,16 @@ NextScan:
 
     ; Next scan
     invoke          FilterValueTwo, pid, hListBox, scanVal, scanMode.condition
+    test            eax, eax
+    jnz             ScanFailed
 
     ; End
     invoke          ShowWindow, hLoadingLabel, SW_HIDE
     invoke          UpdateWindow, hLoadingLabel
+    jmp             WinProcExit
+
+ScanFailed:
+    invoke          MessageBox, hMainWnd, ADDR scanFailText, ADDR errorTitle, MB_OK
     jmp             WinProcExit
 
 SelectAddr:
@@ -556,7 +588,13 @@ ModifyAddr:
     invoke          ReadValue, OFFSET writeAddr, 11, 1024
     invoke          ReadValue, OFFSET writeData, 13, scanVal.valSize
     invoke          Modify, pid, writeAddr, writeData, scanVal.valSize
+    test            eax, eax
+    jnz             ModifyFailed
     invoke          MessageBox, hMainWnd, ADDR successMsg, ADDR windowName, MB_OK
+    jmp             WinProcExit
+
+ModifyFailed:
+    invoke          MessageBox, NULL, ADDR modifyFailText, ADDR errorTitle, MB_OK
     jmp             WinProcExit
 
 WinProcExit:

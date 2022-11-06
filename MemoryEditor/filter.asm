@@ -40,8 +40,7 @@ FilterValue PROC,
     scanVal:    ScanValue,             ; use this value to select addresses
     scanMode:   ScanMode               ; specification in scanning
 ; Filter out addresses according to the value.
-; No return value.
-
+; Return value: eax == 1 iff error.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
     ; local variables used in iteration
     LOCAL       hMod[100]:      DWORD
@@ -337,6 +336,7 @@ SUCCESS_end:
     jmp         PIECE
     ret
 fail_RET:
+    mov         eax, 0
     ret
 accessFailed:
     add         edi, scanMode.step
@@ -344,6 +344,7 @@ accessFailed:
     ret
 filterProcReadFailed:
     invoke      printf, OFFSET errorFilterMsg
+    mov         eax, 1
     ret
 FilterValue ENDP
 
@@ -355,7 +356,7 @@ FilterValueTwo PROC,
     scanVal:    ScanValue,             ; use this value to select addresses
     condition:  DWORD                  ; signify >, >=, =, <=, <
 ; Select addresses according to the value from a given set.
-; No return value.
+; Return value: eax == 1 iff error.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
     ; LOCAL       tmpValDWORD:    DWORD
     ; LOCAL       tmpValWORD:     WORD
@@ -389,8 +390,8 @@ findLoop:
     inc         count
     mov         ebx, [edi]
     
-    .IF          scanVal.valSize == TYPE_DWORD
-        invoke      ReadProcessMemory, handle, ebx, OFFSET bufQWORD, TYPE_DWORD, 0
+    .IF          scanVal.valSize == TYPE_QWORD
+        invoke      ReadProcessMemory, handle, ebx, OFFSET bufQWORD, TYPE_QWORD, 0
         add         edi, TYPE lastsearch
         lea         edx, bufQWORD
         mov         eax, [edx + 4]      ; higher
@@ -586,9 +587,11 @@ findDone:
     ; invoke      printf, OFFSET findDoneMsg
     mov         eax, newCount
     mov         totaladdr, eax
+    mov         eax, 0
     ret
 filterProcReadFailed:
     invoke      printf, OFFSET errorFilterMsg
+    mov         eax, 1
     ret
 FilterValueTwo ENDP
 

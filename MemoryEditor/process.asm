@@ -21,7 +21,7 @@ errorMsg        BYTE        "Window not found", 0ah, 0dh, 0
 EnumProc PROC,
     hListBox:   DWORD                   ; the handle of Listbox if GUI is used
 ; Enumerate all processes.
-; No return value.
+; Return value: eax == 1 iff error.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
     ; local variables used in iteration
     local       procName[260]:  BYTE
@@ -88,10 +88,12 @@ procReadOver:
     pop         ecx
     dec         ecx
     jnz         L1
+    mov         eax, 0
     ret
 
 enumerateFailed:
     invoke      printf, OFFSET errorEnumMsg
+    mov         eax, 1
     ret
 EnumProc ENDP
 
