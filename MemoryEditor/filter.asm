@@ -8,7 +8,7 @@ bufQWORD        QWORD       ?
 ; bufWORD         WORD        ?
 ; bufBYTE         BYTE        ?
 
-filterMsg       BYTE        "Use value %u to filter", 0ah, 0dh, 0
+filterMsg       BYTE        "Use value %lu to filter", 0ah, 0dh, 0
 filterAnsMsg    BYTE        "Found address: %08X", 0ah, 0dh, 0
 testMsg         BYTE        "val is %08X", 0ah, 0dh, 0
 msgBuffer       BYTE        64 DUP(0)
@@ -26,7 +26,10 @@ addrQwordMsg     BYTE        "%08X            %llu", 0
 addrDwordMsg     BYTE        "%08X            %u", 0
 addrWordMsg      BYTE        "%08X            %hu", 0
 addrByteMsg      BYTE        "%08X            %hhu", 0
+addrFloatMsg     BYTE		 "%08X            %f", 0
+addrDoubleMsg    BYTE		 "%08X            %lf", 0
 
+float2Msg        BYTE        "%.2lf", 0
 
 .code
 
@@ -233,10 +236,66 @@ PIECE:
         add         edi, scanMode.step
         jmp         PIECE
 
+    .ELSEIF      scanVal.valSize == TYPE_REAL4
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufQWORD, 4, 0
+        test        eax, eax
+        jz          accessFailed
+        finit
+        fld         REAL4 PTR scanVal.value
+        fld         REAL4 PTR bufQWORD
+        mov         edx, scanMode.condition
+        .IF         edx == COND_GT
+            fcomi       ST(0), ST(1)
+            ja          SUCCESS_find
+        .ELSEIF     edx == COND_LT
+            fcomi       ST(0), ST(1)
+            jb          SUCCESS_find
+        .ELSEIF     edx == COND_EQ
+            fcomi       ST(0), ST(1)
+            je          SUCCESS_find
+        .ELSEIF     edx == COND_GE
+            fcomi       ST(0), ST(1)
+            jae         SUCCESS_find
+        .ELSEIF     edx == COND_LE
+            fcomi       ST(0), ST(1)
+            jbe         SUCCESS_find
+        .ENDIF
+        add         edi, scanMode.step
+        jmp         PIECE
+
+    .ELSEIF      scanVal.valSize == TYPE_REAL8
+        invoke      ReadProcessMemory, ebx, edi, OFFSET bufQWORD, 8, 0
+        test        eax, eax
+        jz          accessFailed
+        finit
+        
+        fld         REAL8 PTR scanVal.value
+        fld         REAL8 PTR bufQWORD
+        mov         edx, scanMode.condition
+        .IF         edx == COND_GT
+            fcomi       ST(0), ST(1)
+            ja          SUCCESS_find
+        .ELSEIF     edx == COND_LT
+            fcomi       ST(0), ST(1)
+            jb          SUCCESS_find
+        .ELSEIF     edx == COND_EQ
+            fcomi       ST(0), ST(1)
+            je          SUCCESS_find
+        .ELSEIF     edx == COND_GE
+            fcomi       ST(0), ST(1)
+            jae         SUCCESS_find
+        .ELSEIF     edx == COND_LE
+            fcomi       ST(0), ST(1)
+            jbe         SUCCESS_find
+        .ENDIF
+        add         edi, scanMode.step
+        jmp         PIECE
+
     .ENDIF
     ret
 
 SUCCESS_find:
+    call        ShowFPUStack
     mov         eax, totaladdr
     cmp         eax, LENGTH lastsearch
     jae         fail_RET
@@ -254,7 +313,6 @@ SUCCESS_find:
     invoke      printf, OFFSET newLineMsg
     jmp         SUCCESS_end
 updateListBox:
-    invoke      printf, OFFSET filterAnsMsg, lastsearch[0]
     mov         eax, totaladdr
     cmp         eax, 1024
     ja          SUCCESS_end
@@ -429,6 +487,50 @@ findLoop:
             cmp         al, BYTE PTR scanVal.value
             jbe         findSuccess
         .ENDIF
+    .ELSEIF      scanVal.valSize == TYPE_REAL4
+        invoke      ReadProcessMemory, handle, ebx, OFFSET bufQWORD, 4, 0
+        add         edi, TYPE lastsearch
+        fld         REAL4 PTR scanVal.value
+        fld         REAL4 PTR bufQWORD
+        mov         edx, condition
+        .IF         edx == COND_GT
+            fcomi       ST(0), ST(1)
+            ja          findSuccess
+        .ELSEIF     edx == COND_LT
+            fcomi       ST(0), ST(1)
+            jb          findSuccess
+        .ELSEIF     edx == COND_EQ
+            fcomi       ST(0), ST(1)
+            je          findSuccess
+        .ELSEIF     edx == COND_GE
+            fcomi       ST(0), ST(1)
+            jae         findSuccess
+        .ELSEIF     edx == COND_LE
+            fcomi       ST(0), ST(1)
+            jbe         findSuccess
+        .ENDIF
+    .ELSEIF      scanVal.valSize == TYPE_REAL8
+        invoke      ReadProcessMemory, handle, ebx, OFFSET bufQWORD, 8, 0
+        add         edi, TYPE lastsearch
+        fld         REAL8 PTR scanVal.value
+        fld         REAL8 PTR bufQWORD
+        mov         edx, condition
+        .IF         edx == COND_GT
+            fcomi       ST(0), ST(1)
+            ja          findSuccess
+        .ELSEIF     edx == COND_LT
+            fcomi       ST(0), ST(1)
+            jb          findSuccess
+        .ELSEIF     edx == COND_EQ
+            fcomi       ST(0), ST(1)
+            je          findSuccess
+        .ELSEIF     edx == COND_GE
+            fcomi       ST(0), ST(1)
+            jae         findSuccess
+        .ELSEIF     edx == COND_LE
+            fcomi       ST(0), ST(1)
+            jbe         findSuccess
+        .ENDIF
     .ENDIF
 
     jmp         findLoop
@@ -492,6 +594,7 @@ MakeMessage PROC,
 ; Generate listbox message according to the address and value.
 ; No return value.
 ; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+    LOCAL       tmp:      REAL8
     .IF         valSize == TYPE_QWORD
         invoke      sprintf, dest, OFFSET addrQwordMsg, address, value
     .ELSEIF     valSize == TYPE_DWORD
@@ -500,6 +603,15 @@ MakeMessage PROC,
         invoke      sprintf, dest, OFFSET addrWordMsg, address, WORD PTR value
     .ELSEIF     valSize == TYPE_BYTE
         invoke      sprintf, dest, OFFSET addrByteMsg, address, BYTE PTR value
+    .ELSEIF     valSize == TYPE_REAL4
+        invoke      printf, OFFSET filterMsg, value
+        finit
+        fld         REAL4 PTR value
+        fstp        tmp
+        invoke      printf, OFFSET float2Msg, tmp
+        invoke      sprintf, dest, OFFSET addrDoubleMsg, address, tmp
+    .ELSEIF     valSize == TYPE_REAL8
+        invoke      sprintf, dest, OFFSET addrDoubleMsg, address, tmp
     .ENDIF
     ret
 MakeMessage ENDP

@@ -32,6 +32,7 @@ ScanMode ENDS
 ; Irvine32.lib
 DumpRegs        PROTO
 ExitProcess     PROTO, dwExitCode:DWORD
+ShowFPUStack    PROTO
 
 ; msvcrt.lib
 scanf           PROTO, C:PTR SBYTE, :VARARG
@@ -59,6 +60,7 @@ InputValue      PROTO, dest:PTR QWORD, vSize:DWORD
 ; winmain.asm
 SetChildFont    PROTO, hwnd:DWORD, lParam:DWORD
 AdjWidgetState  PROTO, newState:DWORD
+ReadValue       PROTO, dest:PTR QWORD, hwnd:DWORD, vSize:DWORD
 
 ; Type Constants
 TYPE_QWORD      EQU         <8>

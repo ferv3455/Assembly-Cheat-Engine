@@ -42,7 +42,6 @@ popupTitle      BYTE        "Popup Window", 0
 buttonText      BYTE        "This window was activated by a Button message", 0
 editText        BYTE        "This window was activated by a Edit Control message", 0
 listboxFormat   BYTE        "This window was activated by Listbox item %d", 0
-listboxText     BYTE        50 DUP(?)
 
 ; <<<<<<<<<<<<<<<<<<<< Classes of Widgets >>>>>>>>>>>>>>>>>>>>>>>>>
 windowClass     BYTE        "ASMWin", 0
@@ -139,6 +138,11 @@ writeData       QWORD       ?
 addrMsg         BYTE        "%08X", 0
 hexMsg          BYTE        "%x", 0
 longMsg         BYTE        "%llu", 0
+intMsg          BYTE        "%u", 0
+shortMsg        BYTE        "%hu", 0
+byteMsg         BYTE        "%hhu", 0
+floatMsg        BYTE        "%f", 0
+doubleMsg       BYTE        "%lf", 0
 buffer          BYTE        16 DUP(0)
 successMsg      BYTE        "Successfully rewrite memory.", 0
 valTypes        DWORD       TYPE_BYTE, TYPE_WORD, TYPE_DWORD, TYPE_QWORD, TYPE_REAL4, TYPE_REAL8
@@ -246,7 +250,7 @@ WinMain PROC
 
     ; value edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
-                    NUM_EDIT_STYLE, 440, 205, 120, 24,             
+                    TEXT_EDIT_STYLE, 440, 205, 120, 24,             
                     hMainWnd, 8, hInstance, NULL
     mov         hValEdit, eax
 
@@ -276,7 +280,7 @@ WinMain PROC
 
     ; new value edit
     invoke      CreateWindowEx, 0, ADDR editClass, NULL,
-                    NUM_EDIT_STYLE, 440, 510, 120, 24,             
+                    TEXT_EDIT_STYLE, 440, 510, 120, 24,             
                     hMainWnd, 13, hInstance, NULL
     mov         hNewValEdit, eax
 
@@ -319,7 +323,7 @@ WinMain PROC
 
     ; valuetype combobox
     invoke      CreateWindowEx, 0, ADDR comboClass, NULL,
-                    COMBOBOX_STYLE, 440, 330, 120, 120,             
+                    COMBOBOX_STYLE, 440, 330, 120, 160,             
                     hMainWnd, 19, hInstance, NULL
     mov         hValTpCmbox, eax
     invoke      SendMessage, hValTpCmbox, CB_ADDSTRING, NULL, ADDR valTypeByte
@@ -481,29 +485,32 @@ NewScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
 
     ; Get value
-    invoke          GetDlgItemText, hMainWnd, 8, OFFSET buffer, LENGTHOF buffer
-    invoke          sscanf, OFFSET buffer, OFFSET longMsg, OFFSET scanVal.value
     invoke          SendMessage, hValTpCmbox, CB_GETCURSEL, 0, 0
     mov             eax, valTypes[eax * TYPE valTypes]
     mov             scanVal.valSize, eax
+    invoke          ReadValue, OFFSET scanVal.value, 8, scanVal.valSize
 
     ; Get configurations
     invoke          SendMessage, hScanTpCmbox, CB_GETCURSEL, 0, 0
     mov             scanMode.condition, eax
-    mov             eax, scanVal.valSize
-    mov             scanMode.step, eax
+
     invoke          SendMessage, hMemOptCmbox, CB_GETCURSEL, 0, 0
-    .IF             eax == 1
-        mov         scanMode.step, TYPE_BYTE
+    .IF             eax == 0
+        mov             eax, scanVal.valSize
+        mov             scanMode.step, eax
+        .IF             eax > 4
+            mov             scanMode.step, 4
+        .ENDIF
+    .ELSEIF         eax == 1
+        mov         scanMode.step, 1
     .ELSEIF         eax == 2
-        mov         scanMode.step, TYPE_WORD
+        mov         scanMode.step, 2
     .ELSEIF         eax == 3
-        mov         scanMode.step, TYPE_DWORD
+        mov         scanMode.step, 4
     .ENDIF
-    invoke          GetDlgItemText, hMainWnd, 24, OFFSET buffer, LENGTHOF buffer
-    invoke          sscanf, OFFSET buffer, OFFSET hexMsg, OFFSET scanMode.memMin
-    invoke          GetDlgItemText, hMainWnd, 25, OFFSET buffer, LENGTHOF buffer
-    invoke          sscanf, OFFSET buffer, OFFSET hexMsg, OFFSET scanMode.memMax
+
+    invoke          ReadValue, OFFSET scanMode.memMin, 24, 1024
+    invoke          ReadValue, OFFSET scanMode.memMax, 25, 1024
 
     ; First scan
     invoke          FilterValue, pid, hListBox, scanVal, scanMode
@@ -520,11 +527,10 @@ NextScan:
     invoke          SendMessage, hListBox, LB_RESETCONTENT, 0, 0
 
     ; Get value
-    invoke          GetDlgItemText, hMainWnd, 8, OFFSET buffer, LENGTHOF buffer
-    invoke          sscanf, OFFSET buffer, OFFSET longMsg, OFFSET scanVal.value
     invoke          SendMessage, hValTpCmbox, CB_GETCURSEL, 0, 0
     mov             eax, valTypes[eax * TYPE valTypes]
     mov             scanVal.valSize, eax
+    invoke          ReadValue, OFFSET scanVal.value, 8, scanVal.valSize
 
     ; Get configurations
     invoke          SendMessage, hScanTpCmbox, CB_GETCURSEL, 0, 0
@@ -547,10 +553,8 @@ SelectAddr:
     jmp             WinProcExit
 
 ModifyAddr:
-    invoke          GetDlgItemText, hMainWnd, 11, OFFSET buffer, LENGTHOF buffer
-    invoke          sscanf, OFFSET buffer, OFFSET hexMsg, OFFSET writeAddr
-    invoke          GetDlgItemText, hMainWnd, 13, OFFSET buffer, LENGTHOF buffer
-    invoke          sscanf, OFFSET buffer, OFFSET longMsg, OFFSET writeData
+    invoke          ReadValue, OFFSET writeAddr, 11, 1024
+    invoke          ReadValue, OFFSET writeData, 13, scanVal.valSize
     invoke          Modify, pid, writeAddr, writeData, scanVal.valSize
     invoke          MessageBox, hMainWnd, ADDR successMsg, ADDR windowName, MB_OK
     jmp             WinProcExit
@@ -662,6 +666,34 @@ AdjWidgetState PROC,
     .ENDIF
     ret
 AdjWidgetState ENDP
+
+
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+ReadValue PROC,
+    dest:       PTR QWORD,      ; Destination address (always in the first byte)
+    id:         DWORD,          ; child window id
+    vSize:      DWORD           ; Size of data
+; Get different type of input from the widget. Save it in the given address.
+; No return value.
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««    
+    invoke      GetDlgItemText, hMainWnd, id, OFFSET buffer, LENGTHOF buffer
+    .IF         vSize == TYPE_QWORD
+        invoke      sscanf, OFFSET buffer, OFFSET longMsg, dest
+    .ELSEIF     vSize == TYPE_DWORD
+        invoke      sscanf, OFFSET buffer, OFFSET intMsg, dest
+    .ELSEIF     vSize == TYPE_WORD
+        invoke      sscanf, OFFSET buffer, OFFSET shortMsg, dest
+    .ELSEIF     vSize == TYPE_BYTE
+        invoke      sscanf, OFFSET buffer, OFFSET byteMsg, dest
+    .ELSEIF     vSize == TYPE_REAL4
+        invoke      sscanf, OFFSET buffer, OFFSET floatMsg, dest
+    .ELSEIF     vSize == TYPE_REAL8
+        invoke      sscanf, OFFSET buffer, OFFSET doubleMsg, dest
+    .ELSE
+        invoke      sscanf, OFFSET buffer, OFFSET hexMsg, dest
+    .ENDIF
+    ret
+ReadValue ENDP
 
 
 ; END
