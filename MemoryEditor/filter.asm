@@ -8,7 +8,7 @@ bufQWORD        QWORD       ?
 ; bufWORD         WORD        ?
 ; bufBYTE         BYTE        ?
 
-filterMsg       BYTE        "Use value %lu to filter", 0ah, 0dh, 0
+filterMsg       BYTE        "Use value %llu to filter", 0ah, 0dh, 0
 filterAnsMsg    BYTE        "Found address: %08X", 0ah, 0dh, 0
 testMsg         BYTE        "val is %08X", 0ah, 0dh, 0
 msgBuffer       BYTE        64 DUP(0)
@@ -240,6 +240,11 @@ PIECE:
         invoke      ReadProcessMemory, ebx, edi, OFFSET bufQWORD, 4, 0
         test        eax, eax
         jz          accessFailed
+        
+        invoke      CheckSpecFloat, bufQWORD, scanVal.valSize
+        test        eax, eax
+        jnz         NextFloat
+
         finit
         fld         REAL4 PTR scanVal.value
         fld         REAL4 PTR bufQWORD
@@ -260,6 +265,8 @@ PIECE:
             fcomi       ST(0), ST(1)
             jbe         SUCCESS_find
         .ENDIF
+
+    NextFloat:
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -267,8 +274,12 @@ PIECE:
         invoke      ReadProcessMemory, ebx, edi, OFFSET bufQWORD, 8, 0
         test        eax, eax
         jz          accessFailed
+
+        invoke      CheckSpecFloat, bufQWORD, scanVal.valSize
+        test        eax, eax
+        jnz         NextDouble
+
         finit
-        
         fld         REAL8 PTR scanVal.value
         fld         REAL8 PTR bufQWORD
         mov         edx, scanMode.condition
@@ -288,6 +299,8 @@ PIECE:
             fcomi       ST(0), ST(1)
             jbe         SUCCESS_find
         .ENDIF
+
+    NextDouble:
         add         edi, scanMode.step
         jmp         PIECE
 
@@ -297,7 +310,6 @@ PIECE:
     ret
 
 SUCCESS_find:
-    call        ShowFPUStack
     mov         eax, totaladdr
     cmp         eax, LENGTH lastsearch
     jae         fail_RET
@@ -492,6 +504,11 @@ findLoop:
     .ELSEIF      scanVal.valSize == TYPE_REAL4
         invoke      ReadProcessMemory, handle, ebx, OFFSET bufQWORD, 4, 0
         add         edi, TYPE lastsearch
+
+        invoke      CheckSpecFloat, bufQWORD, scanVal.valSize
+        test        eax, eax
+        jnz         NextFloat
+
         fld         REAL4 PTR scanVal.value
         fld         REAL4 PTR bufQWORD
         mov         edx, condition
@@ -511,9 +528,15 @@ findLoop:
             fcomi       ST(0), ST(1)
             jbe         findSuccess
         .ENDIF
+    NextFloat:
     .ELSEIF      scanVal.valSize == TYPE_REAL8
         invoke      ReadProcessMemory, handle, ebx, OFFSET bufQWORD, 8, 0
         add         edi, TYPE lastsearch
+
+        invoke      CheckSpecFloat, bufQWORD, scanVal.valSize
+        test        eax, eax
+        jnz         NextDouble
+
         fld         REAL8 PTR scanVal.value
         fld         REAL8 PTR bufQWORD
         mov         edx, condition
@@ -533,6 +556,7 @@ findLoop:
             fcomi       ST(0), ST(1)
             jbe         findSuccess
         .ENDIF
+    NextDouble:
     .ENDIF
 
     jmp         findLoop
@@ -606,17 +630,53 @@ MakeMessage PROC,
     .ELSEIF     valSize == TYPE_BYTE
         invoke      sprintf, dest, OFFSET addrByteMsg, address, BYTE PTR value
     .ELSEIF     valSize == TYPE_REAL4
-        invoke      printf, OFFSET filterMsg, value
-        finit
+        ; finit
         fld         REAL4 PTR value
         fstp        tmp
         invoke      printf, OFFSET float2Msg, tmp
+        invoke      printf, OFFSET filterMsg, value
         invoke      sprintf, dest, OFFSET addrDoubleMsg, address, tmp
     .ELSEIF     valSize == TYPE_REAL8
-        invoke      sprintf, dest, OFFSET addrDoubleMsg, address, tmp
+        invoke      printf, OFFSET float2Msg, REAL8 PTR value
+        invoke      printf, OFFSET filterMsg, value
+        invoke      sprintf, dest, OFFSET addrDoubleMsg, address, REAL8 PTR value
     .ENDIF
     ret
 MakeMessage ENDP
 
+
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+CheckSpecFloat PROC, 
+    value:QWORD, 
+    valSize:DWORD
+; Check whether value is a special float. (Infinity or NaN)
+; Return value eax == 1 if so.
+; ««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««««
+    push        edx
+    .IF         valSize == 32
+        mov         eax, DWORD PTR value
+        shr         eax, 23
+        cmp         al, 0FFh
+        je          IsSpec
+    .ELSEIF     valSize == 64
+        lea         edx, value
+        mov         eax, [edx + 4]
+        shr         eax, 20
+        cmp         al, 0FFh
+        jne         IsNotSpec
+        shr         eax, 3
+        cmp         al, 0FFh
+        je          IsSpec
+    .ENDIF
+
+IsNotSpec:
+    mov         eax, 0
+    pop         edx
+    ret
+IsSpec:
+    mov         eax, 1
+    push        edx
+    ret
+CheckSpecFloat ENDP
 
 END

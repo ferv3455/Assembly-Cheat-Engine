@@ -50,6 +50,7 @@ FilterValue     PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue, scanMode:Sc
 FilterValueTwo  PROTO, pid:DWORD, hListBox:DWORD, scanVal:ScanValue, condition:DWORD
 FetchAddr       PROTO, index:DWORD, address:PTR DWORD
 MakeMessage     PROTO, dest:PTR BYTE, address:DWORD, value:QWORD, valSize:DWORD
+CheckSpecFloat  PROTO, value:QWORD, valSize:DWORD
 
 ; memedit.asm
 Modify          PROTO, pid:DWORD, writeAddr:DWORD, writeData:QWORD, valSize:DWORD
