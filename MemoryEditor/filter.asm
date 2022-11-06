@@ -234,6 +234,8 @@ PIECE:
         jmp         PIECE
 
     .ENDIF
+    add         edi, scanMode.step
+    jmp         PIECE
     ret
 
 SUCCESS_find:
@@ -254,7 +256,7 @@ SUCCESS_find:
     invoke      printf, OFFSET newLineMsg
     jmp         SUCCESS_end
 updateListBox:
-    invoke      printf, OFFSET filterAnsMsg, lastsearch[0]
+    ;invoke      printf, OFFSET filterAnsMsg, lastsearch[0]
     mov         eax, totaladdr
     cmp         eax, 1024
     ja          SUCCESS_end
